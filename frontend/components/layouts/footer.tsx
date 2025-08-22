@@ -12,9 +12,9 @@ export default function Footer() {
     };
 
     return (
-        <footer className="bg-[#3E3E3E] text-white py-8 overflow-hidden">
+        <footer className="bg-[#3E3E3E] text-white py-8 overflow-hidden px-4">
             {/* Logo */}
-            <div className="container mx-auto px-6 md:px-0 flex flex-col md:flex-row md:justify-between md:items-center gap-6">
+            <div className="container mx-auto md:px-0 flex flex-col md:flex-row md:justify-between md:items-center gap-6">
                 <div className="flex items-center">
                     <Image
                         src="/icons/white-logo.svg"
@@ -27,13 +27,13 @@ export default function Footer() {
             </div>
 
             {/* Info Section */}
-            <div className="container mx-auto px-6 md:px-0 py-8 grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-64">
+            <div className="container mx-auto md:px-0 py-8 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-64">
                 <div className="flex flex-col justify-between">
-                    <h1 className="text-4xl md:text-5xl font-semibold">
-                        Driven by vision, built with passion, crafted with intention.
+                    <h1 className="text-5xl md:text-5xl font-semibold">
+                        Langkah Kecil untuk <span className="opacity-70">Bumi yang Lebih Besar!</span>
                     </h1>
 
-                    <p className="text-xs hidden md:flex mt-6">
+                    <p className="text-xs md:text-sm hidden md:flex font-light opacity-70 mt-6">
                         &copy; {currentYear} GreenFlow all right reserved
                     </p>
                 </div>
@@ -72,9 +72,9 @@ export default function Footer() {
             </div>
 
             {/* Big Logo Text */}
-            <div className="container mx-auto px-4 md:px-0">
+            <div className="container mx-auto md:px-0">
                 <div className="flex justify-center items-center">
-                    <h1 className="text-[90px] md:text-[266px] cursor-default text-text mb-6 leading-none font-semibold text-center">
+                    <h1 className="text-[77px] md:text-[160px] lg:text-[266px] cursor-default text-text mb-6 leading-none font-semibold text-center">
                         GreenFlow
                     </h1>
                 </div>
@@ -93,7 +93,7 @@ export default function Footer() {
             </div>
 
             <p className="text-xs text-center text-subtle md:hidden mt-4">
-                &copy; {currentYear} GreenFlow all right reserved
+                &copy; {currentYear} GreenFlow semua hak dilindungi.
             </p>
         </footer>
     );

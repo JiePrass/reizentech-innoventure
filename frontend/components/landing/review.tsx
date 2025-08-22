@@ -13,31 +13,24 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 const reviews = [
     {
         id: 1,
-        text: `"I've been consistently impressed with the quality of service provided by this website. They have exceeded my expectations and delivered exceptional results. Highly recommended!"`,
-        name: "Steve H.",
-        role: "Marketing Manager",
-        avatar: "/images/hero-bg.png",
+        text: `"Dengan menggunakan GreenFlow, saya bisa mengurangi emisi karbon saya dan berbuat baik untuk bumi. Aplikasi yang luar biasa!"`,
+        name: "Abdul Balmond",
+        role: "Aktivis Lingkungan",
+        avatar: "/images/profile3.png",
     },
     {
         id: 2,
-        text: `"The AI features are top-notch and very easy to use. It really helped our business streamline workflows!"`,
-        name: "Laura P.",
-        role: "Product Designer",
-        avatar: "/images/hero-bg.png",
+        text: `"GreenFlow membantu saya untuk lebih sadar akan jejak karbon saya, dan sekarang saya merasa lebih berkontribusi pada lingkungan!"`,
+        name: "Yusuf Terizla",
+        role: "Aktivis Lingkungan",
+        avatar: "/images/profile2.png",
     },
     {
         id: 3,
-        text: `"Fantastic support team and excellent results. I would definitely recommend this to others."`,
-        name: "Daniel R.",
-        role: "Startup Founder",
-        avatar: "/images/hero-bg.png",
-    },
-    {
-        id: 4,
-        text: `"Fantastic support team and excellent results. I would definitely recommend this to others."`,
-        name: "Daniel R.",
-        role: "Startup Founder",
-        avatar: "/images/hero-bg.png",
+        text: `"Misi harian di GreenFlow menyenangkan dan bermanfaat. Saya bisa mendapatkan diskon produk daur ulang untuk membantu UMKM!"`,
+        name: "Siti Miya",
+        role: "Pengguna Setia",
+        avatar: "/images/profile.png",
     },
 ]
 
@@ -59,17 +52,17 @@ export default function ReviewSection() {
     }, [swiperInst])
 
     return (
-        <section className="relative flex flex-col items-center justify-center py-20 overflow-hidden">
+        <section className="relative flex flex-col items-center justify-center py-20 lg:px-0 px-4 overflow-hidden">
             {/* Header */}
-            <div className="flex flex-col gap-4 items-center mb-12 text-center">
+            <div className="flex flex-col gap-4 items-center mb-12 text-center">    
                 <Badge variant="outline" className="text-gray-700 border-gray-300 px-4 py-2 font-light text-base">
                     <Image src="/icons/stars-black.svg" alt="stars" width={20} height={20} className="inline-block mr-2" />
-                    Fitur AI Terbaru dan Terbaik
+                    Testimoni Aplikasi GreenFlow
                 </Badge>
-                <h2 className="text-6xl md:text-5xl font-medium">
-                    Apa Itu <span className="text-primary">GreenFlow?</span>
+                <h2 className="text-4xl md:text-5xl font-medium">
+                    Apa Kata Mereka Tentang <span className="text-primary">GreenFlow?</span>
                 </h2>
-                <p className="text-gray-500 max-w-xl">Lorem ipsum dolor sit amet consectetur. Ipsum faucibus</p>
+                <p className="text-gray-500">Lihat bagaimana GreenFlow telah membantu pengguna untuk lebih sadar akan jejak karbon mereka</p>
             </div>
 
             {/* Carousel */}
@@ -113,8 +106,8 @@ export default function ReviewSection() {
                 </Swiper>
 
                 {/* Fade kiri & kanan */}
-                <div className="pointer-events-none absolute left-0 top-0 h-full w-32 bg-gradient-to-r from-white to-transparent z-10" />
-                <div className="pointer-events-none absolute right-0 top-0 h-full w-32 bg-gradient-to-l from-white to-transparent z-10" />
+                <div className="hidden lg:block pointer-events-none absolute left-0 top-0 h-full w-32 bg-gradient-to-r from-white to-transparent z-10" />
+                <div className="hidden lg:block pointer-events-none absolute right-0 top-0 h-full w-32 bg-gradient-to-l from-white to-transparent z-10" />
 
                 {/* Tombol shadcn di bawah, tanpa absolute */}
                 <div className="mt-6 flex justify-center gap-4">

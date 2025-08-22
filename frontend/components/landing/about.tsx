@@ -7,10 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 
 export default function AboutSection() {
     return (
-        <section className="container mx-auto py-16" id="about">
-            <div className="flex justify-between items-center">
-
-                <div className="flex w-1/2 flex-col justify-between gap-16">
+        <section className="container mx-auto py-16 px-4" id="about">
+            <div className="flex flex-col justify-between gap-8 md:gap-12 lg:flex-row">
+                <div className="flex flex-col justify-between gap-8 md:gap-16">
                     <div className="flex flex-col gap-2">
                         <Badge
                             variant="outline"
@@ -19,7 +18,7 @@ export default function AboutSection() {
                             <Image src="/icons/stars-black.svg" alt="stars" width={24} height={24} className="inline-block mr-2" />
                             Perkenalan Aplikasi GreenFlow
                         </Badge>
-                        <h2 className="text-6xl font-medium">Apa Itu <span className="text-primary">GreenFlow?</span></h2>
+                        <h2 className="text-3xl md:text-6xl font-medium">Apa Itu <span className="text-primary">GreenFlow?</span></h2>
                     </div>
                     <Button className="rounded-full px-[32px] text-base w-fit" asChild>
                         <Link href="/dashboard">
@@ -27,57 +26,54 @@ export default function AboutSection() {
                         </Link>
                     </Button>
                 </div>
-                <p className="text-4xl text-gray-700 w-1/2">
+                <p className="text-3xl md:text-4xl lg:text-5xl text-gray-700 lg:w-1/2 md:max-w-2xl lg:items-center font-medium">
                     GreenFlow adalah aplikasi untuk memantau jejak karbon dan <span className="opacity-70">berpartisipasi dalam program pengurangan karbon.</span>
                 </p>
             </div>
 
-            <div className="flex gap-8 py-12">
-                <Card className="flex w-full flex-row items-center rounded-2xl p-0 bg-gradient-to-tr from-[#C8EAD8] to-[#DFF1EF] max-w-[600px]">
-                    <CardContent className="p-8 flex justify-between flex-col h-full">
-                        <CardTitle className="text-2xl font-semibold mb-2">
-                            Atur Jadwal, <br /> Kolaborasi Lebih <br /> Mudah
+            <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-8 py-12">
+                <Card className="md:col-span-6 flex w-full md:flex-row items-center rounded-2xl p-0 bg-gradient-to-tr from-[#C8EAD8] to-[#DFF1EF] lg:max-w-[600px]">
+                    <CardContent className="px-8 pt-8 md:py-8 flex justify-between flex-col h-full">
+                        <CardTitle className="text-3xl md:text-4xl font-medium mb-4">
+                            Menjadikan Bumi Yang Lebih Asri dan Baik
                         </CardTitle>
-                        <p className="text-sm text-muted-foreground">
-                            Lorem ipsum dolor sit amet consectetur. Maecenas diam sit nunc
-                            bibendum
+                        <p className="text-sm md:text-lg">
+                            Dengan berpartisipasi dalam GreenFlow, Anda berkontribusi pada penciptaan lingkungan yang lebih sehat dan asri
                         </p>
                     </CardContent>
-                    <div className="w-full md:w-1/2 h-40 md:h-auto">
+                    <div className="w-full flex justify-center md:w-1/3 h-52 md:h-auto">
                         <Image
                             src="/images/flower.png" // ganti dengan gambar kamu
                             alt="feature"
-                            className="object-cover w-full h-full max-w-[320px]"
+                            className="object-contain h-full max-w-[320px] md:w-48"
                             width={500}
                             height={500}
                         />
                     </div>
                 </Card>
 
-                <Card className="rounded-2xl bg-gradient-to-tr from-[#27423B] to-primary text-white justify-between">
+                <Card className="rounded-2xl md:col-span-3 aspect-square bg-gradient-to-tr pr-16 from-[#27423B] to-primary text-white justify-between">
                     <CardHeader>
-                        <CardTitle className="text-2xl font-semibold">
-                            Atur Jadwal, <br /> Kolaborasi Lebih Mudah
+                        <CardTitle className="text-3xl font-medium">
+                            Mengurangi Jejak Karbon Anda
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-sm opacity-90">
-                            Lorem ipsum dolor sit amet consectetur. Maecenas diam sit nunc
-                            bibendum
+                        <p className="opacity-70">
+                            Lacak dan kurangi emisi karbon dalam kegiatan sehari-hari dengan lebih mudah.
                         </p>
                     </CardContent>
                 </Card>
 
-                <Card className="rounded-2xl bg-gradient-to-tr from-[#27423B] to-primary text-white justify-between">
+                <Card className="rounded-2xl md:col-span-3 aspect-square bg-gradient-to-tr pr-16 from-[#27423B] to-primary text-white justify-between">
                     <CardHeader>
-                        <CardTitle className="text-2xl font-semibold">
-                            Atur Jadwal, <br /> Kolaborasi Lebih Mudah
+                        <CardTitle className="text-3xl font-medium">
+                            Mendukung Konservasi Alam 
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-sm opacity-90">
-                            Lorem ipsum dolor sit amet consectetur. Maecenas diam sit nunc
-                            bibendum
+                        <p className="opacity-70">
+                            Anda mendukung konservasi alam dan mempromosikan keberlanjutan.
                         </p>
                     </CardContent>
                 </Card>

@@ -7,7 +7,7 @@ import ReviewSection from "@/components/landing/review";
 
 export default function Home() {
   return (
-    <div className="container mx-auto">
+    <div className="">
       <HeroSection />
       <AboutSection />
       <FeatureSection />

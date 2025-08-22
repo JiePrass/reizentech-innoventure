@@ -9,7 +9,7 @@ import { ChevronRight } from "lucide-react"
 export default function FeatureSection() {
     return (
         <section className="bg-[#F1F4F1] container mx-auto rounded-3xl flex justify-center items-center" id="feature">
-            <div className="max-w-7xl flex flex-col p-24">
+            <div className="py-24 px-4 md:max-w-7xl flex flex-col lg:p-24">
                 <div className="flex flex-col items-center gap-2">
                     <Badge
                         variant="outline"
@@ -25,7 +25,7 @@ export default function FeatureSection() {
                 </div>
 
                 <div className="flex flex-col">
-                    <div className="flex flex-wrap gap-12 justify-center my-12">
+                    <div className="flex flex-wrap gap-6 lg:gap-12 justify-center my-12">
                         <Card className="w-[300px]">
                             <CardContent>
                                 <div className="text-primary p-1 rounded-sm shadow w-fit border-gray-100 mb-4">

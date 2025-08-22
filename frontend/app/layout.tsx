@@ -31,7 +31,7 @@ export default function RootLayout({
         className={sfPro.variable}
       >
         <Header />
-        <main>
+        <main className="bg-[#F9F9F9]">
           {children}
         </main>
         <Footer />
