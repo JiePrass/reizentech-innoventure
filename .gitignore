@@ -26,6 +26,8 @@ frontend/.env
 # Build Output
 # ======================================
 dist/
+migrations/
+migration/
 build/
 .next/
 out/
