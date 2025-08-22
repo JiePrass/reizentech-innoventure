@@ -1,7 +1,5 @@
 import localFont from "next/font/local"
 import "./globals.css"
-import Header from "@/components/layouts/header";
-import Footer from "@/components/layouts/footer";
 
 const sfPro = localFont({
   src: [
@@ -30,11 +28,7 @@ export default function RootLayout({
       <body
         className={sfPro.variable}
       >
-        <Header />
-        <main className="bg-[#F9F9F9]">
-          {children}
-        </main>
-        <Footer />
+        {children}
       </body>
     </html>
   );
