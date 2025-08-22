@@ -8,10 +8,10 @@ import {
   IconDeviceMobileFilled,
   IconHelp,
   IconSparkles,
-  IconSettings,
   IconTargetArrow,
   IconTrophyFilled,
   IconAwardFilled,
+  IconLogout
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/shared/nav-main"
@@ -54,14 +54,14 @@ const data = {
   ],
   navSecondary: [
     {
-      title: "Settings",
-      url: "#",
-      icon: IconSettings,
-    },
-    {
       title: "Get Help",
       url: "#",
       icon: IconHelp,
+    },
+    {
+      title: "Logout",
+      url: "#",
+      icon: IconLogout,
     },
   ],
   navTracker: [
