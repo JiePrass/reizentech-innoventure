@@ -149,8 +149,8 @@ export default function ElectrictyTracker() {
             <SectionCards />
 
             {/* Action Bar */}
-            <div className="flex justify-between items-center bg-gray-100 px-6 py-3 rounded-md">
-                <h2 className="font-semibold text-lg">Daftar Alat Elektronik</h2>
+            <div className="flex justify-between items-center bg-gray-100 px-6 py-3 rounded-md w-full overflow-x-auto">
+                <h2 className="font-semibold text-lg whitespace-nowrap">Daftar Alat Elektronik</h2>
                 <div className="flex gap-4 items-center">
                     {/* Utils */}
                     <div className="flex">
