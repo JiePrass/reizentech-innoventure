@@ -30,6 +30,7 @@ export function NavMain({
                 <span>{item.title}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
+            </a>
           ))}
         </SidebarMenu>
       </SidebarGroupContent>

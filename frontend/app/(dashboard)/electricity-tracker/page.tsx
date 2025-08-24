@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
     Card,
     CardHeader,
@@ -31,6 +31,18 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { GetElectricityTracker } from "@/helpers/GetElectricityTracker"
+import { PostElectricityTracker } from "@/helpers/PostElectricityTracker"
+import { useAuthMe } from "@/helpers/AuthMe"
+
+type DeviceTypes = {
+  id: number;
+  date: string;
+  name: string;
+  consumption: string;
+  emission: string;
+  status: string;
+};
 
 // Dummy data grafik
 const data = [
@@ -43,77 +55,109 @@ const data = [
     { name: "50k", value: 70 },
 ]
 
-// Dummy Device awal
-const initialDevices = [
-    {
-        id: 1,
-        date: "21/08/25",
-        name: "KulKas",
-        consumption: "21 kWh",
-        emission: "1,79 kg CO₂e",
-        status: "Aktif",
-    },
-    {
-        id: 2,
-        date: "21/08/25",
-        name: "CRM Admin Pages",
-        consumption: "21 kWh",
-        emission: "1,79 kg CO₂e",
-        status: "Aktif",
-    },
-    {
-        id: 3,
-        date: "21/08/25",
-        name: "Client Pages",
-        consumption: "21 kWh",
-        emission: "1,79 kg CO₂e",
-        status: "Tidak Aktif",
-    },
-    {
-        id: 4,
-        date: "20/08/25",
-        name: "Admin Dashboard",
-        consumption: "21 kWh",
-        emission: "1,79 kg CO₂e",
-        status: "Tidak Aktif",
-    },
-    {
-        id: 5,
-        date: "20/08/25",
-        name: "App Landing Page",
-        consumption: "21 kWh",
-        emission: "1,79 kg CO₂e",
-        status: "Aktif",
-    },
-]
+// // Dummy Device awal
+// const initialDevices = [
+//     {
+//         id: 1,
+//         date: "21/08/25",
+//         name: "KulKas",
+//         consumption: "21 kWh",
+//         emission: "1,79 kg CO₂e",
+//         status: "Aktif",
+//     },
+//     {
+//         id: 2,
+//         date: "21/08/25",
+//         name: "CRM Admin Pages",
+//         consumption: "21 kWh",
+//         emission: "1,79 kg CO₂e",
+//         status: "Aktif",
+//     },
+//     {
+//         id: 3,
+//         date: "21/08/25",
+//         name: "Client Pages",
+//         consumption: "21 kWh",
+//         emission: "1,79 kg CO₂e",
+//         status: "Tidak Aktif",
+//     },
+//     {
+//         id: 4,
+//         date: "20/08/25",
+//         name: "Admin Dashboard",
+//         consumption: "21 kWh",
+//         emission: "1,79 kg CO₂e",
+//         status: "Tidak Aktif",
+//     },
+//     {
+//         id: 5,
+//         date: "20/08/25",
+//         name: "App Landing Page",
+//         consumption: "21 kWh",
+//         emission: "1,79 kg CO₂e",
+//         status: "Aktif",
+//     },
+// ]
 
 export default function ElectrictyTracker() {
-    const [devices, setDevices] = useState(initialDevices)
+    const { data: dataMe } = useAuthMe()
+    const { data: dataElectricty } = GetElectricityTracker()
+    const [devices, setDevices] = useState<DeviceTypes[]>([])
+    useEffect(() => {
+        if (dataElectricty && dataElectricty?.data && dataElectricty?.data?.length > 0 ) {
+            const initialDevices = dataElectricty?.data?.map((d) => ({
+                id: d.id,
+                date: d.created_at.split("T")[0],
+                name: d.device_name,
+                consumption: `${d.power_watts} kWh`,
+                emission: `${(d.power_watts * 0.0275).toFixed(2)} kg CO₂e`,
+                status: d.power_watts > 0 ? "Aktif" : "Tidak Aktif",
+            }));
+            setDevices(initialDevices ?? [])
+            console.log(initialDevices)
+        }
+    } , [dataElectricty?.data])
     const [search, setSearch] = useState("")
     const [filter, setFilter] = useState<"All" | "Aktif" | "Tidak Aktif">("All")
     const [sortAsc, setSortAsc] = useState(true)
+
 
     // State Modal
     const [open, setOpen] = useState(false)
     const [newDevice, setNewDevice] = useState({
         name: "",
         consumption: "",
+        type: "",
         emission: "0 kg CO₂e",
         status: "Aktif",
     })
 
     // Handler Tambah Device
-    const handleAdd = () => {
+    const handleAdd = async () => {
         if (!newDevice.name) return
         const device = {
             id: devices.length + 1,
             date: new Date().toLocaleDateString("id-ID"),
             ...newDevice,
         }
-        setDevices([...devices, device])
-        setNewDevice({ name: "", consumption: "", emission: "", status: "Aktif" })
-        setOpen(false)
+        try {
+            const result = await PostElectricityTracker({
+                device_name: newDevice.name,
+                power_watts: parseInt(newDevice.consumption),
+                device_type: newDevice.type,
+                user_id: parseInt(dataMe?.data?.id ?? null) ?? null
+            });
+    
+            console.log(result);
+            setDevices([...devices!, device])
+            setNewDevice({ name: "", type: '', consumption: "", emission: "", status: "Aktif" })
+            setOpen(false)
+        } catch {
+            setOpen(false)
+            console.error('error while adding')
+        }
     }
+    
 
     // Handler Filter
     const handleFilter = () => {
@@ -128,7 +172,7 @@ export default function ElectrictyTracker() {
     }
 
     // Apply search, filter, sort
-    const filteredDevices = devices
+    const filteredDevices = devices!
         .filter((d) =>
             d.name.toLowerCase().includes(search.toLowerCase())
         )
@@ -177,6 +221,16 @@ export default function ElectrictyTracker() {
                                                 setNewDevice({ ...newDevice, name: e.target.value })
                                             }
                                             placeholder="Contoh: AC Ruang Tamu"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label>Tipe Device</Label>
+                                        <Input
+                                            value={newDevice.type}
+                                            onChange={(e) =>
+                                                setNewDevice({ ...newDevice, type: e.target.value })
+                                            }
+                                            placeholder="Contoh: laptop"
                                         />
                                     </div>
                                     <div>
