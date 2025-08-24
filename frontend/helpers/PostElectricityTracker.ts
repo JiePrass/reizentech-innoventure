@@ -3,7 +3,7 @@ interface ElectronicPayload {
   device_name: string;
   device_type: string;
   power_watts: number;
-  user_id: number;
+  user_id?: number | null;
 }
 
 interface ResponseData {
@@ -15,7 +15,7 @@ interface ResponseData {
 export async function PostElectricityTracker(payload: ElectronicPayload): Promise<ResponseData> {
   try {
     const res = await fetch(
-      process.env.NEXT_PUBLIC_API_URL + "/api/carbon/electronics",
+      process.env.NEXT_PUBLIC_API_URL + "/api/carbon/electronic",
       {
         method: "POST",
         headers: {
@@ -30,7 +30,7 @@ export async function PostElectricityTracker(payload: ElectronicPayload): Promis
     //   throw new Error("Gagal menambahkan data elektronik");
     // }
 
-    return await res.text();
+    return await res.json();
   } catch (err: unknown) {
     let message = "Terjadi kesalahan";
     if (err instanceof Error) {

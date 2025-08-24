@@ -26,9 +26,8 @@ const data = [
 export default function DashboardPage() {
   const { data: dataUser, loading, error } = useAuthMe()
 
-  if (loading) return <p>Loading...</p>
-  if (error) return <p>Error: {error}</p>
-  console.log(dataUser)
+  if (loading) return console.log('loadingg..')
+  if (error) return console.log('error get me..', error)
   return (
     <div className="p-6 space-y-6">
       {/* Header Greeting */}
@@ -36,7 +35,7 @@ export default function DashboardPage() {
         <Image src="/images/dashboard.png" alt="" width={200} height={200} className="object-contain md:hidden" />
         <div>
           <h1 className="text-2xl font-semibold">
-            Hallo, <span className="text-primary">{'tes'}</span>
+            Hallo, <span className="text-primary">{dataUser?.data?.Username ?? 'Guest'}</span>
           </h1>
           <p className="text-muted-foreground max-w-sm">
             Anda telah berkontribusi mengurangi emisi karbon sebesar <span className="font-semibold">34,54 kg CO₂e</span> bulan ini

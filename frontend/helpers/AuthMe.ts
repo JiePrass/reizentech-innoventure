@@ -1,7 +1,9 @@
 import * as React from "react"
 /* eslint-disable */
 interface Response1 {
-    id: string;
+    ID?: string;
+    Username?: string;
+    Role?: string;
 }
 interface Response {
     status: string;

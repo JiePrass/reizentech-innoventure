@@ -15,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useAuthMe } from "@/helpers/AuthMe"
 
 type UserResponse = {
   ID: number
@@ -28,32 +29,10 @@ type UserResponse = {
 }
 
 export function AppHeader() {
-  const [user, setUser] = useState<UserResponse | null>(null)
+  const { data: dataUser, loading, error } = useAuthMe()
 
-  useEffect(() => {
-    async function fetchUser() {
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("authtoken")}`,
-          },
-        })
-        const json = await res.json()
-        console.log("API Response:", json)
-
-        // simpan langsung field `data`
-        setUser(json.data)
-      } catch (err) {
-        console.error("Error ambil user:", err)
-      }
-    }
-    fetchUser()
-  }, [])
-
-  const displayName = user?.profile?.FullName || user?.Username || "Guest"
-  const avatar = user?.profile?.AvatarURL || "/images/profile.png"
-  const role = user?.Role || "User"
-
+  if (loading) return console.log('loadingg..')
+  if (error) return console.log('error get me..', error)
   return (
     <header className="flex py-4 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
@@ -94,8 +73,8 @@ export function AppHeader() {
                   className="rounded-full"
                 />
                 <div className="hidden sm:flex flex-col items-start">
-                  <span className="text-sm font-medium">{displayName}</span>
-                  <span className="text-xs text-muted-foreground">{role}</span>
+                  <span className="text-sm font-medium">{dataUser?.data?.Username ?? 'Guest'}</span>
+                  <span className="text-xs text-muted-foreground">{dataUser?.data?.Role ?? 'User'}</span>
                 </div>
                 <ChevronDown className="h-4 w-4" />
               </Button>

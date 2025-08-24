@@ -1,5 +1,5 @@
 "use client"
-
+/* eslint-disable */
 import { useEffect, useState } from "react"
 import {
     Card,
@@ -45,15 +45,15 @@ type DeviceTypes = {
 };
 
 // Dummy data grafik
-const data = [
-    { name: "1k", value: 20 },
-    { name: "5k", value: 64 },
-    { name: "10k", value: 45 },
-    { name: "20k", value: 78 },
-    { name: "30k", value: 35 },
-    { name: "40k", value: 60 },
-    { name: "50k", value: 70 },
-]
+// const data = [
+//     { name: "1k", value: 20 },
+//     { name: "5k", value: 64 },
+//     { name: "10k", value: 45 },
+//     { name: "20k", value: 78 },
+//     { name: "30k", value: 35 },
+//     { name: "40k", value: 60 },
+//     { name: "50k", value: 70 },
+// ]
 
 // // Dummy Device awal
 // const initialDevices = [
@@ -128,7 +128,6 @@ export default function ElectrictyTracker() {
         name: "",
         consumption: "",
         type: "",
-        emission: "0 kg CO₂e",
         status: "Aktif",
     })
 
@@ -138,6 +137,7 @@ export default function ElectrictyTracker() {
         const device = {
             id: devices.length + 1,
             date: new Date().toLocaleDateString("id-ID"),
+            emission: `${(parseInt(newDevice.consumption) * 0.0275).toFixed(2)} kg CO₂e`,
             ...newDevice,
         }
         try {
@@ -145,12 +145,12 @@ export default function ElectrictyTracker() {
                 device_name: newDevice.name,
                 power_watts: parseInt(newDevice.consumption),
                 device_type: newDevice.type,
-                user_id: parseInt(dataMe?.data?.id ?? null) ?? null
+                user_id: dataMe?.data?.ID ? parseInt(dataMe.data.ID) : null
             });
     
             console.log(result);
-            setDevices([...devices!, device])
-            setNewDevice({ name: "", type: '', consumption: "", emission: "", status: "Aktif" })
+            setDevices([...devices, device])
+            setNewDevice({ name: "", type: '', consumption: "", status: "Aktif" })
             setOpen(false)
         } catch {
             setOpen(false)
@@ -187,6 +187,28 @@ export default function ElectrictyTracker() {
             }
         })
 
+    
+    const [trendData, setTrendData] = useState<{ name: string; value: number }[]>([])
+
+    useEffect(() => {
+    if (dataElectricty?.data && dataElectricty?.data?.length > 0) {
+        // group by tanggal
+        const grouped: Record<string, number> = {}
+
+        dataElectricty.data.forEach((d: any) => {
+        const date = d.created_at.split("T")[0]
+        const consumption = d.power_watts 
+        grouped[date] = (grouped[date] || 0) + consumption
+        })
+
+        const chartData = Object.entries(grouped).map(([date, total]) => ({
+        name: date, // jadi label sumbu X
+        value: total, // total kWh
+        }))
+
+        setTrendData(chartData)
+    }
+    }, [dataElectricty?.data])
     return (
         <div className="p-6 space-y-6">
             {/* Statistik Cards */}
@@ -290,22 +312,29 @@ export default function ElectrictyTracker() {
             </div>
 
             {/* Tabel */}
-            <DeviceTable devices={filteredDevices} />
+            <DeviceTable devices={filteredDevices} 
+                onUpdate={(updated) => {
+                    setDevices(devices.map(d => d.id === updated.id ? updated : d))
+                }}
+                onDelete={(id) => {
+                    setDevices(devices.filter(d => d.id !== id))
+                }}
+             />
 
             {/* Grafik Tren */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Tren Pengurangan Karbon Bulanan</CardTitle>
-                    <CardDescription>Oktober</CardDescription>
+                    <CardTitle>Tren Konsumsi Listrik & Karbon</CardTitle>
+                    <CardDescription>Berdasarkan Total Konsumsi kWh</CardDescription>
                 </CardHeader>
                 <CardFooter>
                     <div className="w-full overflow-x-auto">
                         <div className="h-64 min-w-[600px]">
                             <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={data}>
+                                <LineChart data={trendData}>
                                     <XAxis dataKey="name" />
                                     <YAxis />
-                                    <Tooltip />
+                                    <Tooltip formatter={(value) => `${value} kWh`} />
                                     <Line type="monotone" dataKey="value" stroke="#16a34a" />
                                 </LineChart>
                             </ResponsiveContainer>
