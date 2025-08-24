@@ -28,11 +28,20 @@ type AuthServiceInterface interface {
 type AuthService struct {
 	userRepo     repository.UserRepositoryInterface
 	activityRepo repository.ActivityRepositoryInterface
+	missionRepo  repository.CheckMissionRepositoryInterface // TAMBAH INI
 }
 
-// Constructor
-func NewAuthService(repo repository.UserRepositoryInterface, activityRepo repository.ActivityRepositoryInterface) *AuthService {
-	return &AuthService{userRepo: repo, activityRepo: activityRepo}
+// Update constructor
+func NewAuthService(
+	userRepo repository.UserRepositoryInterface, 
+	activityRepo repository.ActivityRepositoryInterface,
+	missionRepo repository.CheckMissionRepositoryInterface, // TAMBAH INI
+) *AuthService {
+	return &AuthService{
+		userRepo:     userRepo,
+		activityRepo: activityRepo,
+		missionRepo:  missionRepo, // TAMBAH INI
+	}
 }
 
 // Hash password
@@ -101,8 +110,6 @@ func (s *AuthService) Register(ctx context.Context, req *dto.RegisterDTO) (*mode
 	return user, nil
 }
 
-// Login
-// Login
 func (s *AuthService) Login(ctx context.Context, req *dto.LoginDTO) (*models.User, string, error) {
 	user, err := s.userRepo.FindByEmail(ctx, req.Email)
 	if err != nil || user == nil {
@@ -118,16 +125,28 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginDTO) (*models.Use
 		return nil, "", err
 	}
 
-	// Simpan activity log (tapi jangan hentikan login kalau gagal nulis log)
+	// Simpan activity log
 	msg := fmt.Sprintf("User %d login berhasil", user.ID)
 	if err := s.activityRepo.LogActivity(ctx, user.ID, msg); err != nil {
-		// Bisa pilih: log error aja, tapi jangan gagal login
 		fmt.Printf("gagal simpan activity log: %v\n", err)
 	}
 
+	// CHECK MISSION SETELAH LOGIN - INI YANG DIMAU
+	// Panggil repository mission check untuk mengecek mission yang berhubungan dengan login
+	go func() {
+		// Gunakan context background untuk goroutine
+		bgCtx := context.Background()
+		
+		// Check semua mission aktif untuk user ini
+		if err := s.missionRepo.CheckAllUserMissions(bgCtx, user.ID); err != nil {
+			fmt.Printf("Gagal check missions setelah login: %v\n", err)
+		} else {
+			fmt.Printf("Success check missions untuk user %d setelah login\n", user.ID)
+		}
+	}()
+
 	return user, token, nil
 }
-
 // Get profile
 func (s *AuthService) GetProfile(ctx context.Context, userID int64) (*models.User, error) {
 	user, _, err := s.userRepo.FindByID(ctx, userID) // tangkap 3 return values, tapi profile di-ignore

@@ -14,7 +14,7 @@ type UserRepositoryInterface interface {
 	FindByID(ctx context.Context, id int64) (*model.User, *model.UserProfile, error)
 	Create(ctx context.Context, user *model.User, profile *model.UserProfile) error
 	Update(ctx context.Context, user *model.User) error
-	VerifyEmailByToken(ctx context.Context, token int64) error
+	VerifyEmailByToken(ctx context.Context, userID int64) error
 	SaveResetPasswordToken(ctx context.Context, userID int64, token string) error
 	FindByResetPasswordToken(ctx context.Context, token string) (*model.User, error)
 }
@@ -72,20 +72,21 @@ func (r *userRepository) FindByID(ctx context.Context, id int64) (*model.User, *
 		return nil, nil, err
 	}
 
-	// assign profile ke user
 	user.Profile = profile
-
 	return user, profile, nil
 }
 
 func (r *userRepository) Create(ctx context.Context, user *model.User, profile *model.UserProfile) error {
-	// Mulai transaction
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
 
-	// Step 1: Insert ke tabel users
 	userQuery := `
 		INSERT INTO users (username, email, password, role, google_id, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6)
@@ -95,25 +96,20 @@ func (r *userRepository) Create(ctx context.Context, user *model.User, profile *
 		user.Username, user.Email, user.Password, user.Role, user.GoogleID, user.CreatedAt,
 	).Scan(&user.ID)
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
-	// Step 2: Insert ke tabel user_profiles hanya dengan user_id
+	// Insert ke tabel user_profiles
 	profileQuery := `
 		INSERT INTO user_profiles (user_id, created_at)
 		VALUES ($1, $2)
 		RETURNING id
 	`
-	err = tx.QueryRowContext(ctx, profileQuery,
-		user.ID, time.Now(),
-	).Scan(&profile.ID)
+	err = tx.QueryRowContext(ctx, profileQuery, user.ID, time.Now()).Scan(&profile.ID)
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
-	// Commit transaction
 	return tx.Commit()
 }
 

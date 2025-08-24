@@ -1,11 +1,15 @@
 package models
 
-import "time"
+import (
+	"database/sql"
+	"time"
+)
 
 type UserBadge struct {
-	ID         int64      `db:"id"`
-	UserID     int64      `db:"user_id"`
-	BadgeID    int64      `db:"badge_id"`
-	RedeemedAt *time.Time `db:"redeemed_at"`
-	CreatedAt  time.Time  `db:"created_at"`
+	ID         int64      `json:"id"`
+	UserID     int64      `json:"user_id"`
+	BadgeID    int64      `json:"badge_id"`
+	RedeemedAt sql.NullTime   `json:"redeemed_at"`
+	CreatedAt  time.Time  `json:"created_at"`
+	Badge      *Badge     `json:"badge,omitempty"`
 }

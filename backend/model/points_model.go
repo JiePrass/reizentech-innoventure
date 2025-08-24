@@ -2,9 +2,10 @@ package models
 
 import "time"
 
-type Point struct {
-	ID          int64     `db:"id"`
-	UserID      int64     `db:"user_id"`
-	TotalPoints int       `db:"total_points"`
-	CreatedAt   time.Time `db:"created_at"`
+type Points struct {
+	ID          int64     `json:"id"`
+	UserID      int64     `json:"user_id"`
+	TotalPoints int       `json:"total_points"`
+	CreatedAt   time.Time `json:"created_at"`
 }
+

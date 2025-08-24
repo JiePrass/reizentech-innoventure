@@ -134,3 +134,53 @@ func VerifyEmailMiddleware(db *sql.DB) fiber.Handler {
 		return c.Next()
 	}
 }
+
+
+func AdminMiddleware(db *sql.DB) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		userToken := c.Locals("user")
+		if userToken == nil {
+			return c.Status(fiber.StatusUnauthorized).JSON(
+				helpers.BasicResponse(false, "unauthorized"),
+			)
+		}
+
+		claims, ok := userToken.(*helpers.JWTClaims)
+		if !ok {
+			return c.Status(fiber.StatusUnauthorized).JSON(
+				helpers.BasicResponse(false, "invalid token claims"),
+			)
+		}
+
+		userIDStr := claims.ID
+		userID, err := strconv.ParseInt(userIDStr, 10, 64)
+		if err != nil {
+			return c.Status(fiber.StatusUnauthorized).JSON(
+				helpers.BasicResponse(false, "invalid user id in token"),
+			)
+		}
+
+		// Cek role di database
+		var role string
+		err = db.QueryRow("SELECT role FROM users WHERE id = $1", userID).Scan(&role)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return c.Status(fiber.StatusUnauthorized).JSON(
+					helpers.BasicResponse(false, "user tidak ditemukan"),
+				)
+			}
+			fmt.Println("DB error:", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				helpers.BasicResponse(false, "internal server error"),
+			)
+		}
+
+		if role != "admin" {
+			return c.Status(fiber.StatusForbidden).JSON(
+				helpers.BasicResponse(false, "akses hanya untuk admin"),
+			)
+		}
+
+		return c.Next()
+	}
+}

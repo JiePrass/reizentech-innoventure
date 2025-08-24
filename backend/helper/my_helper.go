@@ -114,3 +114,34 @@ func BindAndValidate(c *fiber.Ctx, request interface{}) error {
 
 	return nil
 }
+
+
+// func BindFormWithFile[T any](ctx *fiber.Ctx, fileField string) (*T, string, error) {
+// 	dto := new(T)
+
+// 	// Parse semua field ke DTO
+// 	if err := ctx.BodyParser(dto); err != nil {
+// 		return nil, "", err
+// 	}
+
+// 	// Ambil file
+// 	fileHeader, err := ctx.FormFile(fileField)
+// 	if err != nil {
+// 		// File tidak wajib
+// 		return dto, "", nil
+// 	}
+
+// 	file, err := fileHeader.Open()
+// 	if err != nil {
+// 		return nil, "", err
+// 	}
+// 	defer file.Close()
+
+// 	// Upload ke Blob
+// 	url, err := UploadFileToBlob(file, fileHeader.Filename)
+// 	if err != nil {
+// 		return nil, "", err
+// 	}
+
+// 	return dto, url, nil
+// }

@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@prisma/client": "^6.14.0",
     "@vercel/blob": "^1.1.1",
     "blob": "^0.1.0"
   }

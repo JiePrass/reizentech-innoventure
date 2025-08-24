@@ -54,5 +54,11 @@ func (r *activityRepository) GetUserLogs(ctx context.Context, userID int64, limi
 		}
 		logs = append(logs, l)
 	}
+	
+	// Check for any error encountered during iteration
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	
 	return logs, nil
 }

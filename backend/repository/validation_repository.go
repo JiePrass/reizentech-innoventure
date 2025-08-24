@@ -24,10 +24,10 @@ func (r *validationRepository) IsUnique(ctx context.Context, table, column, valu
 	var result int8
 
 	if id != 0 {
-		query = fmt.Sprintf("SELECT 1 FROM %s WHERE %s = $1 AND id != $2 LIMIT 1", table, column)
+		query = fmt.Sprintf("SELECT 1 FROM %s WHERE %s = ? AND id != ? LIMIT 1", table, column)
 		err = r.db.QueryRowContext(ctx, query, value, id).Scan(&result)
 	} else {
-		query = fmt.Sprintf("SELECT 1 FROM %s WHERE %s = $1 LIMIT 1", table, column)
+		query = fmt.Sprintf("SELECT 1 FROM %s WHERE %s = ? LIMIT 1", table, column)
 		err = r.db.QueryRowContext(ctx, query, value).Scan(&result)
 	}
 

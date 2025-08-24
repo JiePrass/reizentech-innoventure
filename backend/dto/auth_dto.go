@@ -13,7 +13,7 @@ type RegisterDTO struct {
 	GoogleID *int64  `json:"google_id,omitempty"` // optional
 }
 
-type ResetPasswordRequestDTO struct {	
+type ResetPasswordRequestDTO struct {
 	Email string `json:"email" validate:"required,email"`
 }
 
@@ -34,7 +34,6 @@ type RegisterResponseDTO struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
 }
-
 
 type UpdatePasswordDTO struct {
 	OldPassword string `json:"old_password" validate:"required"`

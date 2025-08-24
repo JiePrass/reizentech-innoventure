@@ -1,12 +1,15 @@
 package models
 
-import "time"
+import (
+	"database/sql"
+	"time"
+)
 
 type UserMission struct {
-	ID          int64      `db:"id"`
-	UserID      int64      `db:"user_id"`
-	MissionID   int64      `db:"mission_id"`
-	Status      string     `db:"status"`
-	CompletedAt *time.Time `db:"completed_at"`
-	CreatedAt   time.Time  `db:"created_at"`
+	ID          int64        `json:"id"`
+	UserID      int64        `json:"user_id"`
+	MissionID   int64        `json:"mission_id"`
+	CompletedAt sql.NullTime `json:"completed_at"`
+	CreatedAt   time.Time    `json:"created_at"`
+	Mission     *Mission     `json:"mission,omitempty"`
 }
