@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import { useEffect, useState } from "react"
 import { ChevronDown, LogOut, Settings, User } from "lucide-react"
 import { IconBellFilled } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
@@ -15,7 +16,44 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+type UserResponse = {
+  ID: number
+  Email: string
+  Role: string
+  Username: string
+  profile: {
+    AvatarURL: string | null
+    FullName: string | null
+  }
+}
+
 export function AppHeader() {
+  const [user, setUser] = useState<UserResponse | null>(null)
+
+  useEffect(() => {
+    async function fetchUser() {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("authtoken")}`,
+          },
+        })
+        const json = await res.json()
+        console.log("API Response:", json)
+
+        // simpan langsung field `data`
+        setUser(json.data)
+      } catch (err) {
+        console.error("Error ambil user:", err)
+      }
+    }
+    fetchUser()
+  }, [])
+
+  const displayName = user?.profile?.FullName || user?.Username || "Guest"
+  const avatar = user?.profile?.AvatarURL || "/images/profile.png"
+  const role = user?.Role || "User"
+
   return (
     <header className="flex py-4 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
@@ -32,7 +70,6 @@ export function AppHeader() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative">
                 <IconBellFilled />
-                {/* indikator notif */}
                 <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500" />
               </Button>
             </DropdownMenuTrigger>
@@ -50,15 +87,15 @@ export function AppHeader() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-2">
                 <Image
-                  src="/images/profile.png"
+                  src={avatar}
                   alt="Avatar"
                   width={32}
                   height={32}
                   className="rounded-full"
                 />
                 <div className="hidden sm:flex flex-col items-start">
-                  <span className="text-sm font-medium">Abdul Terizla</span>
-                  <span className="text-xs text-muted-foreground">Admin</span>
+                  <span className="text-sm font-medium">{displayName}</span>
+                  <span className="text-xs text-muted-foreground">{role}</span>
                 </div>
                 <ChevronDown className="h-4 w-4" />
               </Button>
