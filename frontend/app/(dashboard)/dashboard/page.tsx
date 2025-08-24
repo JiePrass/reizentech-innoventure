@@ -26,8 +26,8 @@ const data = [
 export default function DashboardPage() {
   const { data: dataUser, loading, error } = useAuthMe()
 
-  if (loading) return <p>Loading...</p>
-  if (error) return <p>Error: {error}</p>
+  if (loading) return console.log('loadingg..')
+  if (error) return console.log('error get me..', error)
   return (
     <div className="p-6 space-y-6">
       {/* Header Greeting */}
