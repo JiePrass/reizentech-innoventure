@@ -38,17 +38,17 @@ const data = {
   navMain: [
     {
       title: "Dashboard",
-      url: "#",
+      url: "/dashboard",
       icon: IconLayoutDashboardFilled,
     },
     {
       title: "ChatBot AI",
-      url: "#",
+      url: "/chat-bot",
       icon: IconSparkles,
     },
     {
       title: "Toko Penukaran",
-      url: "#",
+      url: "/shop",
       icon: IconShoppingCartFilled,
     },
   ],
@@ -67,29 +67,29 @@ const data = {
   navTracker: [
     {
       title: "Karbon Kendaraan",
-      url: "#",
+      url: "/vehicle-tracker",
       icon: IconCarFilled,
     },
     {
       title: "Karbon Alat Elektronik",
-      url: "#",
+      url: "/electricity-tracker",
       icon: IconDeviceMobileFilled,
     },
   ],
   navGamifikasi: [
     {
-      title: "Misi Harian",
-      url: "#",
+      title: "Misi",
+      url: "/mission",
       icon: IconTargetArrow,
     },
     {
       title: "Lencana Saya",
-      url: "#",
+      url: "/badges",
       icon: IconAwardFilled,
     },
     {
       title: "Papan Peringkat",
-      url: "#",
+      url: "/leaderboard",
       icon: IconTrophyFilled,
     },
   ],
