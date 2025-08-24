@@ -14,8 +14,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useAuthMe } from "@/helpers/AuthMe"
 
 export function AppHeader() {
+  const { data: dataUser, loading, error } = useAuthMe()
+
+  if (loading) return <p>Loading...</p>
+  if (error) return <p>Error: {error}</p>
+  console.log(dataUser  )
   return (
     <header className="flex py-4 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
@@ -57,8 +63,8 @@ export function AppHeader() {
                   className="rounded-full"
                 />
                 <div className="hidden sm:flex flex-col items-start">
-                  <span className="text-sm font-medium">Abdul Terizla</span>
-                  <span className="text-xs text-muted-foreground">Admin</span>
+                  <span className="text-sm font-medium">{dataUser?.data?.Username ?? 'Guest'}</span>
+                  <span className="text-xs text-muted-foreground">{dataUser?.data?.Role ?? 'User'}</span>
                 </div>
                 <ChevronDown className="h-4 w-4" />
               </Button>
