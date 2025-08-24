@@ -48,7 +48,7 @@ const data = {
     },
     {
       title: "Toko Penukaran",
-      url: "#",
+      url: "/shop",
       icon: IconShoppingCartFilled,
     },
   ],
@@ -78,18 +78,18 @@ const data = {
   ],
   navGamifikasi: [
     {
-      title: "Misi Harian",
-      url: "#",
+      title: "Misi",
+      url: "/mission",
       icon: IconTargetArrow,
     },
     {
       title: "Lencana Saya",
-      url: "#",
+      url: "/badges",
       icon: IconAwardFilled,
     },
     {
       title: "Papan Peringkat",
-      url: "#",
+      url: "/leaderboard",
       icon: IconTrophyFilled,
     },
   ],
