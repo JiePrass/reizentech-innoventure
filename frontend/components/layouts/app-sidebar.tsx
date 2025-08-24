@@ -38,12 +38,12 @@ const data = {
   navMain: [
     {
       title: "Dashboard",
-      url: "#",
+      url: "/dashboard",
       icon: IconLayoutDashboardFilled,
     },
     {
       title: "ChatBot AI",
-      url: "#",
+      url: "/chat-bot",
       icon: IconSparkles,
     },
     {
@@ -67,12 +67,12 @@ const data = {
   navTracker: [
     {
       title: "Karbon Kendaraan",
-      url: "#",
+      url: "/vehicle-tracker",
       icon: IconCarFilled,
     },
     {
       title: "Karbon Alat Elektronik",
-      url: "#",
+      url: "/electricity-tracker",
       icon: IconDeviceMobileFilled,
     },
   ],
