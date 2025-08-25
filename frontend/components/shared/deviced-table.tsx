@@ -92,7 +92,7 @@ export default function DeviceTable({ devices, onUpdate, onDelete }: DeviceTable
               <TableCell>{device.consumption}</TableCell>
               <TableCell>{device.emission}</TableCell>
               <TableCell>
-                <Badge className={device.status === "Aktif"
+                <Badge className={device.status === "Aktif" || device.status === "Rendah"
                   ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
                   : "bg-red-100 text-red-700 hover:bg-red-200"}>
                   {device.status}

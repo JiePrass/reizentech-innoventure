@@ -111,10 +111,10 @@ export default function ElectrictyTracker() {
                 name: d.device_name,
                 consumption: `${d.power_watts} kWh`,
                 emission: `${(d.power_watts * 0.0275).toFixed(2)} kg CO₂e`,
-                status: d.power_watts > 0 ? "Aktif" : "Tidak Aktif",
+                status: d.power_watts <= 20 ? "Rendah" : d.power_watts >= 20 ? 'Normal' : d.power_watts > 50 ? "Tinggi" : 'Aktif',
             }));
             setDevices(initialDevices ?? [])
-            console.log(initialDevices)
+            console.log(dataElectricty.data)
         }
     } , [dataElectricty?.data])
     const [search, setSearch] = useState("")
@@ -128,7 +128,6 @@ export default function ElectrictyTracker() {
         name: "",
         consumption: "",
         type: "",
-        status: "Aktif",
     })
 
     // Handler Tambah Device
@@ -138,6 +137,7 @@ export default function ElectrictyTracker() {
             id: devices.length + 1,
             date: new Date().toLocaleDateString("id-ID"),
             emission: `${(parseInt(newDevice.consumption) * 0.0275).toFixed(2)} kg CO₂e`,
+            status: parseInt(newDevice.consumption) <= 20 ? "Rendah" : parseInt(newDevice.consumption) >= 20 ? 'Normal' : parseInt(newDevice.consumption) >= 50 ? "Tinggi" : 'Aktif',
             ...newDevice,
         }
         try {
@@ -150,7 +150,7 @@ export default function ElectrictyTracker() {
     
             console.log(result);
             setDevices([...devices, device])
-            setNewDevice({ name: "", type: '', consumption: "", status: "Aktif" })
+            setNewDevice({ name: "", type: '', consumption: "" })
             setOpen(false)
         } catch {
             setOpen(false)
@@ -265,7 +265,7 @@ export default function ElectrictyTracker() {
                                             placeholder="Contoh: 20 kWh"
                                         />
                                     </div>
-                                    <div>
+                                    {/* <div>
                                         <Label>Status</Label>
                                         <select
                                             className="border rounded px-2 py-1 w-full"
@@ -277,7 +277,7 @@ export default function ElectrictyTracker() {
                                             <option value="Aktif">Aktif</option>
                                             <option value="Tidak Aktif">Tidak Aktif</option>
                                         </select>
-                                    </div>
+                                    </div> */}
                                 </div>
                                 <DialogFooter>
                                     <Button variant="outline" onClick={() => setOpen(false)}>
