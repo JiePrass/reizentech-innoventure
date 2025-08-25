@@ -15,6 +15,7 @@ import {
 import { IconTrendingUp } from "@tabler/icons-react"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 import { Button } from "@/components/ui/button"
+import { GetVehicleTracker } from "@/helpers/GetVehicleTracker"
 
 // Dummy data grafik
 const data = [
@@ -78,6 +79,10 @@ const kendaraanUmum: Vehicle[] = [
 
 export default function VehicleTracker() {
     const [vehicles] = useState<Vehicle[]>(kendaraanUmum)
+    
+    const { data: vehicle } = GetVehicleTracker()
+
+    console.log(vehicle)
 
     return (
         <div className="p-6 space-y-6 overflow-x-hidden">
