@@ -7,7 +7,7 @@ interface ResponseData {
   message: string;
 }
 
-export function GetElectricityTracker() {
+export function GetElectricityDevice() {
   const [data, setData] = React.useState<ResponseData | null>(null)
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)

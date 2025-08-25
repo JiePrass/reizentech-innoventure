@@ -12,7 +12,7 @@ interface ResponseData {
   message: string;
 }
 
-export async function PostElectricityTracker(payload: ElectronicPayload): Promise<ResponseData> {
+export async function AddElectricityDevice(payload: ElectronicPayload): Promise<ResponseData> {
   try {
     const res = await fetch(
       process.env.NEXT_PUBLIC_API_URL + "/api/carbon/electronic",

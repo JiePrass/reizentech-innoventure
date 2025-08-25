@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { Search } from "lucide-react"
+import Swal from "sweetalert2"
 
 type Product = {
     id: number
@@ -28,11 +29,10 @@ export default function RewardStorePage() {
     const [search, setSearch] = useState("")
     const [products, setProducts] = useState<Product[]>([])
     const [loading, setLoading] = useState(true)
-
-    // pagination state
     const [page, setPage] = useState(1)
     const perPage = 8
 
+    // Fetch products
     useEffect(() => {
         const fetchProducts = async () => {
             setLoading(true)
@@ -51,12 +51,46 @@ export default function RewardStorePage() {
         fetchProducts()
     }, [])
 
-    // search
+    // Function tukar poin
+    async function handleExchange(productId: number) {
+        try {
+            const token = localStorage.getItem("authtoken")
+            if (!token) {
+                Swal.fire("Error", "Token tidak ditemukan, silakan login ulang.", "error")
+                return
+            }
+
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/api/store/orders/${productId}`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            )
+
+            const result = await res.json()
+
+            if (res.ok && result.status) {
+                Swal.fire("Berhasil", result.message || "Produk berhasil ditukar!", "success")
+            } else {
+                Swal.fire("Gagal", result.message || "Gagal menukar produk.", "error")
+            }
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                Swal.fire("Error", error.message, "error")
+            } else {
+                Swal.fire("Error", "Terjadi kesalahan tak dikenal", "error")
+            }
+        }
+    }
+
+    // Search & pagination
     const filteredProducts = products.filter((p) =>
         p.name.toLowerCase().includes(search.toLowerCase())
     )
-
-    // pagination logic
     const totalPages = Math.ceil(filteredProducts.length / perPage)
     const startIndex = (page - 1) * perPage
     const paginatedProducts = filteredProducts.slice(startIndex, startIndex + perPage)
@@ -72,7 +106,7 @@ export default function RewardStorePage() {
                         value={search}
                         onChange={(e) => {
                             setSearch(e.target.value)
-                            setPage(1) // reset ke halaman 1 saat search
+                            setPage(1)
                         }}
                         className="pl-9"
                     />
@@ -90,7 +124,7 @@ export default function RewardStorePage() {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
                 {paginatedProducts.map((product) => (
-                    <Card key={product.id} className="overflow-hidden border-none shadow-none">
+                    <Card key={product.id} className="overflow-hidden border-none shadow-none gap-2">
                         <div className="relative flex items-center justify-center hover:shadow-md transition aspect-square border border-gray-200 rounded-xl">
                             <Image
                                 src={product.image_url}
@@ -101,8 +135,8 @@ export default function RewardStorePage() {
                             />
                         </div>
                         <CardContent className="p-0">
-                            <h3 className="text-lg font-medium">{product.name}</h3>
-                            <div className="flex justify-between items-center">
+                            <h3 className="text-xl font-medium">{product.name}</h3>
+                            <div className="flex justify-between items-center mb-2">
                                 <p className="text-sm text-muted-foreground">{product.description}</p>
                                 <div className="flex gap-2 items-center">
                                     <p className="font-semibold">{product.price_points}</p>
@@ -114,6 +148,12 @@ export default function RewardStorePage() {
                                     />
                                 </div>
                             </div>
+                            <Button
+                                className="w-full rounded-full"
+                                onClick={() => handleExchange(product.id)}
+                            >
+                                Tukar Point
+                            </Button>
                         </CardContent>
                     </Card>
                 ))}

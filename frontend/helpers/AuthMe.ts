@@ -1,5 +1,4 @@
 import * as React from "react"
-/* eslint-disable */
 interface Response1 {
     ID?: string;
     Username?: string;

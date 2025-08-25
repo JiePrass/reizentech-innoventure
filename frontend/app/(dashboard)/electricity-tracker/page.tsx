@@ -31,92 +31,33 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { GetElectricityTracker } from "@/helpers/GetElectricityTracker"
-import { PostElectricityTracker } from "@/helpers/PostElectricityTracker"
+import { GetElectricityDevice } from "@/helpers/GetElectricityDevice"
+import { AddElectricityDevice } from "@/helpers/AddElectricityDevice"
 import { useAuthMe } from "@/helpers/AuthMe"
 
 type DeviceTypes = {
-  id: number;
-  date: string;
-  name: string;
-  consumption: string;
-  emission: string;
-  status: string;
+    id: number
+    device_name: string
+    device_type: string
+    power_watts: number
 };
-
-// Dummy data grafik
-// const data = [
-//     { name: "1k", value: 20 },
-//     { name: "5k", value: 64 },
-//     { name: "10k", value: 45 },
-//     { name: "20k", value: 78 },
-//     { name: "30k", value: 35 },
-//     { name: "40k", value: 60 },
-//     { name: "50k", value: 70 },
-// ]
-
-// // Dummy Device awal
-// const initialDevices = [
-//     {
-//         id: 1,
-//         date: "21/08/25",
-//         name: "KulKas",
-//         consumption: "21 kWh",
-//         emission: "1,79 kg CO₂e",
-//         status: "Aktif",
-//     },
-//     {
-//         id: 2,
-//         date: "21/08/25",
-//         name: "CRM Admin Pages",
-//         consumption: "21 kWh",
-//         emission: "1,79 kg CO₂e",
-//         status: "Aktif",
-//     },
-//     {
-//         id: 3,
-//         date: "21/08/25",
-//         name: "Client Pages",
-//         consumption: "21 kWh",
-//         emission: "1,79 kg CO₂e",
-//         status: "Tidak Aktif",
-//     },
-//     {
-//         id: 4,
-//         date: "20/08/25",
-//         name: "Admin Dashboard",
-//         consumption: "21 kWh",
-//         emission: "1,79 kg CO₂e",
-//         status: "Tidak Aktif",
-//     },
-//     {
-//         id: 5,
-//         date: "20/08/25",
-//         name: "App Landing Page",
-//         consumption: "21 kWh",
-//         emission: "1,79 kg CO₂e",
-//         status: "Aktif",
-//     },
-// ]
 
 export default function ElectrictyTracker() {
     const { data: dataMe } = useAuthMe()
-    const { data: dataElectricty } = GetElectricityTracker()
+    const { data: dataElectricty } = GetElectricityDevice()
     const [devices, setDevices] = useState<DeviceTypes[]>([])
     useEffect(() => {
-        if (dataElectricty && dataElectricty?.data && dataElectricty?.data?.length > 0 ) {
+        if (dataElectricty && dataElectricty?.data && dataElectricty?.data?.length > 0) {
             const initialDevices = dataElectricty?.data?.map((d) => ({
                 id: d.id,
-                date: d.created_at.split("T")[0],
-                name: d.device_name,
-                consumption: `${d.power_watts} kWh`,
-                emission: `${(d.power_watts * 0.0275).toFixed(2)} kg CO₂e`,
-                status: d.power_watts > 0 ? "Aktif" : "Tidak Aktif",
+                device_name: d.device_name,
+                device_type: d.device_type,
+                power_watts: d.power_watts,
             }));
             setDevices(initialDevices ?? [])
             console.log(initialDevices)
         }
-    } , [dataElectricty?.data])
+    }, [dataElectricty?.data])
     const [search, setSearch] = useState("")
     const [filter, setFilter] = useState<"All" | "Aktif" | "Tidak Aktif">("All")
     const [sortAsc, setSortAsc] = useState(true)
@@ -141,13 +82,13 @@ export default function ElectrictyTracker() {
             ...newDevice,
         }
         try {
-            const result = await PostElectricityTracker({
+            const result = await AddElectricityDevice({
                 device_name: newDevice.name,
                 power_watts: parseInt(newDevice.consumption),
                 device_type: newDevice.type,
                 user_id: dataMe?.data?.ID ? parseInt(dataMe.data.ID) : null
             });
-    
+
             console.log(result);
             setDevices([...devices, device])
             setNewDevice({ name: "", type: '', consumption: "", status: "Aktif" })
@@ -157,7 +98,7 @@ export default function ElectrictyTracker() {
             console.error('error while adding')
         }
     }
-    
+
 
     // Handler Filter
     const handleFilter = () => {
@@ -187,27 +128,27 @@ export default function ElectrictyTracker() {
             }
         })
 
-    
+
     const [trendData, setTrendData] = useState<{ name: string; value: number }[]>([])
 
     useEffect(() => {
-    if (dataElectricty?.data && dataElectricty?.data?.length > 0) {
-        // group by tanggal
-        const grouped: Record<string, number> = {}
+        if (dataElectricty?.data && dataElectricty?.data?.length > 0) {
+            // group by tanggal
+            const grouped: Record<string, number> = {}
 
-        dataElectricty.data.forEach((d: any) => {
-        const date = d.created_at.split("T")[0]
-        const consumption = d.power_watts 
-        grouped[date] = (grouped[date] || 0) + consumption
-        })
+            dataElectricty.data.forEach((d: any) => {
+                const date = d.created_at.split("T")[0]
+                const consumption = d.power_watts
+                grouped[date] = (grouped[date] || 0) + consumption
+            })
 
-        const chartData = Object.entries(grouped).map(([date, total]) => ({
-        name: date, // jadi label sumbu X
-        value: total, // total kWh
-        }))
+            const chartData = Object.entries(grouped).map(([date, total]) => ({
+                name: date, // jadi label sumbu X
+                value: total, // total kWh
+            }))
 
-        setTrendData(chartData)
-    }
+            setTrendData(chartData)
+        }
     }, [dataElectricty?.data])
     return (
         <div className="p-6 space-y-6">
@@ -312,14 +253,14 @@ export default function ElectrictyTracker() {
             </div>
 
             {/* Tabel */}
-            <DeviceTable devices={filteredDevices} 
+            <DeviceTable devices={filteredDevices}
                 onUpdate={(updated) => {
                     setDevices(devices.map(d => d.id === updated.id ? updated : d))
                 }}
                 onDelete={(id) => {
                     setDevices(devices.filter(d => d.id !== id))
                 }}
-             />
+            />
 
             {/* Grafik Tren */}
             <Card>

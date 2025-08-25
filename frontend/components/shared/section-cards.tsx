@@ -9,11 +9,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { GetElectricityTracker } from "@/helpers/GetElectricityTracker"
+import { GetElectricityDevice } from "@/helpers/GetElectricityDevice"
 import { useEffect, useState } from "react"
 
 export function SectionCards() {
-  const { data: dataElectricty } = GetElectricityTracker()
+  const { data: dataElectricty } = GetElectricityDevice()
   
   const [totalEmission, setTotalEmission] = useState(0)
 

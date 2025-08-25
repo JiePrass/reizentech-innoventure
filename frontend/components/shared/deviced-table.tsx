@@ -5,7 +5,6 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -20,11 +19,9 @@ import { DeleteElectricityTracker } from "@/helpers/DeleteElectricityTracker"
 
 type Device = {
   id: number
-  date: string
-  name: string
-  consumption: string
-  emission: string
-  status: string
+  device_name: string
+  device_type: string
+  power_watts: number
 }
 
 interface DeviceTableProps {
@@ -73,11 +70,9 @@ export default function DeviceTable({ devices, onUpdate, onDelete }: DeviceTable
         <TableHeader>
           <TableRow>
             <TableHead className="w-[40px]" />
-            <TableHead>Tanggal</TableHead>
             <TableHead>Perangkat</TableHead>
+            <TableHead>Tipe</TableHead>
             <TableHead>Konsumsi (kWh)</TableHead>
-            <TableHead>Emisi CO₂e</TableHead>
-            <TableHead>Status</TableHead>
             <TableHead className="w-[40px]" />
           </TableRow>
         </TableHeader>
@@ -87,17 +82,9 @@ export default function DeviceTable({ devices, onUpdate, onDelete }: DeviceTable
               <TableCell className="flex justify-center">
                 <Checkbox aria-label={`Select ${device.name}`} />
               </TableCell>
-              <TableCell>{device.date}</TableCell>
-              <TableCell>{device.name}</TableCell>
-              <TableCell>{device.consumption}</TableCell>
-              <TableCell>{device.emission}</TableCell>
-              <TableCell>
-                <Badge className={device.status === "Aktif"
-                  ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
-                  : "bg-red-100 text-red-700 hover:bg-red-200"}>
-                  {device.status}
-                </Badge>
-              </TableCell>
+              <TableCell>{device.device_name}</TableCell>
+              <TableCell>{device.device_type}</TableCell>
+              <TableCell>{device.power_watts}</TableCell>
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
