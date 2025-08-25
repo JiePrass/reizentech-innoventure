@@ -1,7 +1,6 @@
 "use client"
 
 import Image from "next/image"
-import { useEffect, useState } from "react"
 import { ChevronDown, LogOut, Settings, User } from "lucide-react"
 import { IconBellFilled } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
@@ -17,22 +16,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useAuthMe } from "@/helpers/AuthMe"
 
-type UserResponse = {
-  ID: number
-  Email: string
-  Role: string
-  Username: string
-  profile: {
-    AvatarURL: string | null
-    FullName: string | null
-  }
-}
-
 export function AppHeader() {
   const { data: dataUser, loading, error } = useAuthMe()
 
   if (loading) return console.log('loadingg..')
   if (error) return console.log('error get me..', error)
+
   return (
     <header className="flex py-4 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
@@ -66,7 +55,7 @@ export function AppHeader() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-2">
                 <Image
-                  src={avatar}
+                  src="/images/profile.png"
                   alt="Avatar"
                   width={32}
                   height={32}

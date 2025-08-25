@@ -1,15 +1,20 @@
 "use client"
 
 import Image from "next/image"
+import { useState } from "react"
+import VehicleSlider from "@/components/shared/vehicle-slider"
+import { Badge } from "@/components/ui/badge"
 import {
     Card,
     CardHeader,
     CardTitle,
     CardDescription,
     CardFooter,
+    CardContent,
 } from "@/components/ui/card"
+import { IconTrendingUp } from "@tabler/icons-react"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
-import { SectionCards } from "@/components/shared/section-cards"
+import { Button } from "@/components/ui/button"
 
 // Dummy data grafik
 const data = [
@@ -22,28 +27,147 @@ const data = [
     { name: "50k", value: 70 },
 ]
 
+type Vehicle = {
+    id: number
+    title: string
+    type: "pribadi" | "umum"
+    image: string
+    total: string
+    percentage: string
+    active: boolean
+}
+
+const kendaraanUmum: Vehicle[] = [
+    {
+        id: 1,
+        title: "Sepeda Motor 1",
+        type: "pribadi",
+        image: "/icons/motor.svg",
+        total: "9,82 kg CO₂e",
+        percentage: "5,63%",
+        active: true,
+    },
+    {
+        id: 2,
+        title: "Mobil Pribadi 1",
+        type: "pribadi",
+        image: "/icons/motor.svg",
+        total: "0 kg CO₂e",
+        percentage: "6,35%",
+        active: false,
+    },
+    {
+        id: 3,
+        title: "Mobil Pribadi 2",
+        type: "pribadi",
+        image: "/icons/motor.svg",
+        total: "0 kg CO₂e",
+        percentage: "0%",
+        active: false,
+    },
+    {
+        id: 4,
+        title: "Mobil Pribadi 2",
+        type: "pribadi",
+        image: "/icons/motor.svg",
+        total: "0 kg CO₂e",
+        percentage: "0%",
+        active: false,
+    },
+]
+
 export default function VehicleTracker() {
+    const [vehicles] = useState<Vehicle[]>(kendaraanUmum)
+
     return (
-        <div className="p-6 space-y-6">
-            {/* Header Greeting */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-card p-6 rounded-2xl shadow-sm">
-                <Image src="/images/dashboard.png" alt="" width={200} height={200} className="object-contain md:hidden" />
-                <div>
-                    <h1 className="text-2xl font-semibold">
-                        Hallo, <span className="text-primary">Farhan Abdul</span>
-                    </h1>
-                    <p className="text-muted-foreground max-w-sm">
-                        Anda telah berkontribusi mengurangi emisi karbon sebesar <span className="font-semibold">34,54 kg CO₂e</span> bulan ini
-                    </p>
-                </div>
-                <div className="gap-6 justify-center hidden md:flex">
-                    <Image src="/images/dashboard.png" alt="" width={200} height={200} className="object-contain" />
-                    <Image src="/images/dashboard-2.png" alt="" width={200} height={200} className="object-contain" />
-                </div>
-            </div>
+        <div className="p-6 space-y-6 overflow-x-hidden">
 
             {/* Statistik Cards */}
-            <SectionCards />
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <Card className="gap-0">
+                    <CardHeader className="flex gap-4 mb-2">
+                        <CardTitle className="font-normal text-sm">Total Karbon Yang Dihasilkan</CardTitle>
+                        <Badge variant="outline" className="mt-2">
+                            <IconTrendingUp className="w-4 h-4 mr-1" /> +11.0%
+                        </Badge>
+                    </CardHeader>
+                    <CardContent>
+                        <CardDescription className="text-[28px] whitespace-nowrap font-semibold text-black mb-4">
+                            124 kg CO₂e
+                        </CardDescription>
+                    </CardContent>
+                    <CardFooter>
+                        <p className="text-sm text-muted-foreground">Kenaikan Bulan Ini</p>
+                    </CardFooter>
+                </Card>
+                <Card className="gap-0">
+                    <CardHeader className="flex gap-4 mb-2">
+                        <CardTitle className="font-normal text-sm">Total Karbon Yang Dihasilkan</CardTitle>
+                        <Badge variant="outline" className="mt-2">
+                            <IconTrendingUp className="w-4 h-4 mr-1" /> +11.0%
+                        </Badge>
+                    </CardHeader>
+                    <CardContent>
+                        <CardDescription className="text-[28px] whitespace-nowrap font-semibold text-black mb-4">
+                            124 kg CO₂e
+                        </CardDescription>
+                    </CardContent>
+                    <CardFooter>
+                        <p className="text-sm text-muted-foreground">Kenaikan Bulan Ini</p>
+                    </CardFooter>
+                </Card>
+                <Card className="gap-0">
+                    <CardHeader className="flex gap-4 mb-2">
+                        <CardTitle className="font-normal text-sm">Total Karbon Yang Dihasilkan</CardTitle>
+                        <Badge variant="outline" className="mt-2">
+                            <IconTrendingUp className="w-4 h-4 mr-1" /> +11.0%
+                        </Badge>
+                    </CardHeader>
+                    <CardContent>
+                        <CardDescription className="text-[28px] whitespace-nowrap font-semibold text-black mb-4">
+                            124 kg CO₂e
+                        </CardDescription>
+                    </CardContent>
+                    <CardFooter>
+                        <p className="text-sm text-muted-foreground">Kenaikan Bulan Ini</p>
+                    </CardFooter>
+                </Card>
+            </div>
+
+            <VehicleSlider />
+
+            <div className="flex flex-col space-y-6">
+                <h2 className="text-xl font-semibold">Kendaraan Pribadi</h2>
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {vehicles.map((v) => (
+                        <Card key={v.id}>
+                            <CardHeader className="flex flex-col items-center justify-center">
+                                <Image
+                                    src={v.image}
+                                    alt={v.title}
+                                    width={80}
+                                    height={80}
+                                    className="aspect-square rounded-full p-1 object-contain bg-[#ECECEC]"
+                                />
+                                <CardTitle className="mt-2 text-center">{v.title}</CardTitle>
+                            </CardHeader>
+                            <CardContent className="text-center space-y-2">
+                                <p className="text-sm text-muted-foreground">
+                                    Total Karbon <br /> {v.title}
+                                </p>
+                                <p className="text-lg font-semibold">{v.total}</p>
+                                <p className="text-xs text-gray-500">{v.percentage}</p>
+                                <Button
+                                    variant={v.active ? "destructive" : "outline"}
+                                    className="w-full"
+                                >
+                                    {v.active ? "Matikan Kendaraan" : "Aktifkan Kendaraan"}
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            </div>
 
             {/* Grafik Tren */}
             <Card>
