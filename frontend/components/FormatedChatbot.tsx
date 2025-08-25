@@ -16,7 +16,7 @@ export const FormatedChatbot: React.FC<FormatedChatbotProps> = ({ text }) => {
 
   // Wrap list items with <ul> if found
   if (formatted.includes("<li>")) {
-    formatted = formatted.replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>");
+    formatted = formatted.replace(/(<li>[\s\S]*<\/li>)/g, "<ul>$1</ul>");
   }
 
   // Line breaks
