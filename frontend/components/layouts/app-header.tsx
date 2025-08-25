@@ -15,12 +15,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useAuthMe } from "@/helpers/AuthMe"
+import LogoutAction from "@/helpers/LogoutAction"
 
 export function AppHeader() {
   const { data: dataUser, loading, error } = useAuthMe()
+  const logout = LogoutAction()
 
   if (loading) return console.log('loadingg..')
   if (error) return console.log('error get me..', error)
+    
 
   return (
     <header className="flex py-4 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
@@ -80,7 +83,7 @@ export function AppHeader() {
                 <span>Pengaturan</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem  onClick={() => logout()}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Keluar</span>
               </DropdownMenuItem>
