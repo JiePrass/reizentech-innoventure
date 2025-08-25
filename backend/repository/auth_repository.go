@@ -7,11 +7,12 @@ import (
 	"time"
 
 	model "github.com/Qodarrz/fiber-app/model"
+	models "github.com/Qodarrz/fiber-app/model"
 )
 
 type UserRepositoryInterface interface {
 	FindByEmail(ctx context.Context, email string) (*model.User, error)
-	FindByID(ctx context.Context, id int64) (*model.User, *model.UserProfile, error)
+	FindByID(ctx context.Context, id int64) (*model.User, error)
 	Create(ctx context.Context, user *model.User, profile *model.UserProfile) error
 	Update(ctx context.Context, user *model.User) error
 	VerifyEmailByToken(ctx context.Context, userID int64) error
@@ -44,36 +45,49 @@ func (r *userRepository) FindByEmail(ctx context.Context, email string) (*model.
 	return user, nil
 }
 
-func (r *userRepository) FindByID(ctx context.Context, id int64) (*model.User, *model.UserProfile, error) {
-	user := &model.User{}
-	profile := &model.UserProfile{}
+func (r *userRepository) FindByID(ctx context.Context, id int64) (*models.User, error) {
+	user := &models.User{}
+	profile := &models.UserProfile{}
 
 	query := `
-		SELECT u.id, u.username, u.email, u.password, u.role, u.created_at,
-		       p.id, p.user_id, p.full_name, p.avatar_url, p.birthdate, p.gender, p.created_at
-		FROM users u
-		LEFT JOIN user_profiles p ON u.id = p.user_id
-		WHERE u.id = $1
-	`
+        SELECT u.id AS user_id,
+       u.username,
+       u.email,
+       u.password,
+       u.role,
+       u.created_at AS user_created_at,
+       p.id AS profile_id,
+       p.user_id AS profile_user_id,
+       p.full_name,
+       p.avatar_url,
+       p.birthdate,
+       p.gender,
+       p.created_at AS profile_created_at
+FROM users u
+LEFT JOIN user_profiles p ON u.id = p.user_id
+WHERE u.id = $1;
 
+    `
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
-		// users
 		&user.ID, &user.Username, &user.Email, &user.Password,
 		&user.Role, &user.CreatedAt,
-		// user_profiles
 		&profile.ID, &profile.UserID, &profile.FullName,
 		&profile.AvatarURL, &profile.Birthdate, &profile.Gender,
 		&profile.CreatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, err
+			return nil, err
 		}
-		return nil, nil, err
+		return nil, err
 	}
 
-	user.Profile = profile
-	return user, profile, nil
+	// kalau profile memang ada (hasil LEFT JOIN bukan NULL)
+	if profile.ID != 0 {
+		user.Profile = profile
+	}
+
+	return user, nil
 }
 
 func (r *userRepository) Create(ctx context.Context, user *model.User, profile *model.UserProfile) error {

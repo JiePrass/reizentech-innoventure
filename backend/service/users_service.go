@@ -55,10 +55,10 @@ func (s *UserProfileService) GetProfile(ctx context.Context, userID int64) (*dto
 		Profile: dto.UserProfileResponseDTO{
 			ID:        profile.ID,
 			UserID:    profile.UserID,
-			FullName:  profile.FullName,
-			AvatarURL: profile.AvatarURL,
-			Birthdate: profile.Birthdate,
-			Gender:    profile.Gender,
+			FullName:  *profile.FullName,
+			AvatarURL: *profile.AvatarURL,
+			Birthdate: *profile.Birthdate,
+			Gender:    *profile.Gender,
 			CreatedAt: profile.CreatedAt,
 		},
 	}
@@ -91,17 +91,17 @@ func (s *UserProfileService) UpdateProfile(ctx context.Context, userID int64, re
 
 	// Update fields yang di-provide
 	if req.FullName != nil {
-		profile.FullName = *req.FullName
+		profile.FullName = req.FullName
 	}
 	if req.AvatarURL != nil {
-		profile.AvatarURL = *req.AvatarURL
+		profile.AvatarURL = req.AvatarURL
 	}
 	if req.Birthdate != nil {
-    profile.Birthdate = *req.Birthdate
-}
+		profile.Birthdate = req.Birthdate
+	}
 
 	if req.Gender != nil {
-		profile.Gender = *req.Gender
+		profile.Gender = req.Gender
 	}
 
 	// Update profile
@@ -124,10 +124,10 @@ func (s *UserProfileService) UpdateProfile(ctx context.Context, userID int64, re
 		Profile: dto.UserProfileResponseDTO{
 			ID:        profile.ID,
 			UserID:    profile.UserID,
-			FullName:  profile.FullName,
-			AvatarURL: profile.AvatarURL,
-			Birthdate: profile.Birthdate,
-			Gender:    profile.Gender,
+			FullName:  *profile.FullName,
+			AvatarURL: *profile.AvatarURL,
+			Birthdate: *profile.Birthdate,
+			Gender:    *profile.Gender,
 			CreatedAt: profile.CreatedAt,
 		},
 	}

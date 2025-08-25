@@ -17,3 +17,9 @@ type AddVehicleLogDTO struct {
 	DistanceKm      float64  `json:"distance_km" validate:"required,gt=0"`
 	DurationMinutes int      `json:"duration_minutes" validate:"required,gt=0"`
 }
+
+type EditVehicleDTO struct {
+	VehicleType string `json:"vehicle_type"`
+	FuelType    string `json:"fuel_type"`
+	Name        string `json:"name"`
+}

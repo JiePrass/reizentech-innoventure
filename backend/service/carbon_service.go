@@ -20,6 +20,16 @@ type CarbonServiceInterface interface {
 	ListUserElectronics(ctx context.Context, userID int64) ([]*models.CarbonElectronic, error)
 	AddElectronicsLog(ctx context.Context, userID int64, req *dto.AddElectronicsLogDTO) error
 	GetElectronicsLogs(ctx context.Context, userID, deviceID int64) ([]*models.CarbonElectronicLog, error)
+
+    EditVehicle(ctx context.Context, userID, vehicleID int64, req *dto.EditVehicleDTO) (*models.CarbonVehicle, error)
+	DeleteVehicle(ctx context.Context, userID, vehicleID int64) error
+	GetAllVehicleLogs(ctx context.Context, userID int64) ([]*models.CarbonVehicleLog, error)
+	
+	EditElectronic(ctx context.Context, userID, deviceID int64, req *dto.EditElectronicDTO) (*models.CarbonElectronic, error)
+	DeleteElectronic(ctx context.Context, userID, deviceID int64) error
+	GetAllElectronicLogs(ctx context.Context, userID int64) ([]*models.CarbonElectronicLog, error)
+
+    
 	// Electronics methods would be similarly updated
 }
 
@@ -99,7 +109,6 @@ func (s *CarbonService) AddVehicleLog(ctx context.Context, userID int64, req *dt
         }
     }
 
-    // Hitung emisi
     var factor float64
     switch vehicle.FuelType {
     case models.FuelPetrol:
@@ -148,13 +157,7 @@ func (s *CarbonService) GetVehicleLogs(ctx context.Context, userID, vehicleID in
 	return s.carbonRepo.GetVehicleLogs(ctx, vehicleID)
 }
 
-	// Electronics
-
-
-// ======================== ELECTRONICS ========================
-
 func (s *CarbonService) CreateElectronic(ctx context.Context, userID int64, req *dto.CreateElectronicDTO) (*models.CarbonElectronic, error) {
-	// Check if electronic device with same name already exists for this user
 	existing, err := s.carbonRepo.FindElectronicsByUserAndName(ctx, userID, req.DeviceName)
 	if err != nil {
 		return nil, err
@@ -212,11 +215,9 @@ func (s *CarbonService) AddElectronicsLog(ctx context.Context, userID int64, req
         }
     }
 
-    // Hitung emisi
     const conversionFactor = 0.475
     carbon := float64(device.PowerWatts) * req.DurationHours * conversionFactor
 
-    // Simpan log
     err = s.carbonRepo.CreateElectronicsLog(ctx, &models.CarbonElectronicLog{
         DeviceID:       device.ID,
         DurationHours:  req.DurationHours,
@@ -226,12 +227,10 @@ func (s *CarbonService) AddElectronicsLog(ctx context.Context, userID int64, req
         return err
     }
 
-    // 🔥 Cek missions setelah tambah log
     return s.missionRepo.CheckAllUserMissions(ctx, userID)
 }
 
 func (s *CarbonService) GetElectronicsLogs(ctx context.Context, userID, deviceID int64) ([]*models.CarbonElectronicLog, error) {
-	// First verify the device belongs to the user
 	device, err := s.carbonRepo.FindElectronicsByID(ctx, deviceID)
 	if err != nil {
 		return nil, err
@@ -244,4 +243,134 @@ func (s *CarbonService) GetElectronicsLogs(ctx context.Context, userID, deviceID
 	}
 	
 	return s.carbonRepo.GetElectronicsLogs(ctx, deviceID)
+}
+
+func (s *CarbonService) EditVehicle(ctx context.Context, userID, vehicleID int64, req *dto.EditVehicleDTO) (*models.CarbonVehicle, error) {
+	vehicle, err := s.carbonRepo.FindVehicleByID(ctx, vehicleID)
+	if err != nil {
+		return nil, err
+	}
+	if vehicle == nil {
+		return nil, errors.New("vehicle not found")
+	}
+	if vehicle.UserID != userID {
+		return nil, errors.New("vehicle does not belong to user")
+	}
+
+	// Check if name is being changed and if it conflicts with another vehicle
+	if req.Name != "" && req.Name != vehicle.Name {
+		existing, err := s.carbonRepo.FindVehicleByUserAndName(ctx, userID, req.Name)
+		if err != nil {
+			return nil, err
+		}
+		if existing != nil {
+			return nil, errors.New("vehicle with this name already exists for this user")
+		}
+		vehicle.Name = req.Name
+	}
+
+	if req.VehicleType != "" {
+		vehicle.VehicleType = models.VehicleType(req.VehicleType)
+	}
+	if req.FuelType != "" {
+		vehicle.FuelType = models.FuelType(req.FuelType)
+	}
+
+	err = s.carbonRepo.UpdateVehicle(ctx, vehicle)
+	if err != nil {
+		return nil, err
+	}
+
+	return vehicle, nil
+}
+
+func (s *CarbonService) DeleteVehicle(ctx context.Context, userID, vehicleID int64) error {
+	vehicle, err := s.carbonRepo.FindVehicleByID(ctx, vehicleID)
+	if err != nil {
+		return err
+	}
+	if vehicle == nil {
+		return errors.New("vehicle not found")
+	}
+	if vehicle.UserID != userID {
+		return errors.New("vehicle does not belong to user")
+	}
+
+	// Delete associated logs first
+	err = s.carbonRepo.DeleteVehicleLogs(ctx, vehicleID)
+	if err != nil {
+		return err
+	}
+
+	// Delete the vehicle
+	return s.carbonRepo.DeleteVehicle(ctx, vehicleID)
+}
+
+func (s *CarbonService) GetAllVehicleLogs(ctx context.Context, userID int64) ([]*models.CarbonVehicleLog, error) {
+	return s.carbonRepo.GetAllVehicleLogsByUser(ctx, userID)
+}
+
+func (s *CarbonService) EditElectronic(ctx context.Context, userID, deviceID int64, req *dto.EditElectronicDTO) (*models.CarbonElectronic, error) {
+	device, err := s.carbonRepo.FindElectronicsByID(ctx, deviceID)
+	if err != nil {
+		return nil, err
+	}
+	if device == nil {
+		return nil, errors.New("electronic device not found")
+	}
+	if device.UserID != userID {
+		return nil, errors.New("electronic device does not belong to user")
+	}
+
+	// Check if device name is being changed and if it conflicts with another device
+	if req.DeviceName != "" && req.DeviceName != device.DeviceName {
+		existing, err := s.carbonRepo.FindElectronicsByUserAndName(ctx, userID, req.DeviceName)
+		if err != nil {
+			return nil, err
+		}
+		if existing != nil {
+			return nil, errors.New("electronic device with this name already exists for this user")
+		}
+		device.DeviceName = req.DeviceName
+	}
+
+	if req.DeviceType != "" {
+		device.DeviceType = req.DeviceType
+	}
+	if req.PowerWatts != 0 {
+		device.PowerWatts = req.PowerWatts
+	}
+
+	err = s.carbonRepo.UpdateElectronic(ctx, device)
+	if err != nil {
+		return nil, err
+	}
+
+	return device, nil
+}
+
+func (s *CarbonService) DeleteElectronic(ctx context.Context, userID, deviceID int64) error {
+	device, err := s.carbonRepo.FindElectronicsByID(ctx, deviceID)
+	if err != nil {
+		return err
+	}
+	if device == nil {
+		return errors.New("electronic device not found")
+	}
+	if device.UserID != userID {
+		return errors.New("electronic device does not belong to user")
+	}
+
+	// Delete associated logs first
+	err = s.carbonRepo.DeleteElectronicLogs(ctx, deviceID)
+	if err != nil {
+		return err
+	}
+
+	// Delete the device
+	return s.carbonRepo.DeleteElectronic(ctx, deviceID)
+}
+
+func (s *CarbonService) GetAllElectronicLogs(ctx context.Context, userID int64) ([]*models.CarbonElectronicLog, error) {
+	return s.carbonRepo.GetAllElectronicLogsByUser(ctx, userID)
 }

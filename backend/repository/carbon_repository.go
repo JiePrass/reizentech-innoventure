@@ -16,13 +16,26 @@ type CarbonRepository interface {
 	ListUserVehicles(ctx context.Context, userID int64) ([]*models.CarbonVehicle, error)
 	CreateVehicleLog(ctx context.Context, log *models.CarbonVehicleLog) error
 	GetVehicleLogs(ctx context.Context, vehicleID int64) ([]*models.CarbonVehicleLog, error)
-	
+
 	FindElectronicsByID(ctx context.Context, id int64) (*models.CarbonElectronic, error)
 	FindElectronicsByUserAndName(ctx context.Context, userID int64, deviceName string) (*models.CarbonElectronic, error)
 	CreateElectronics(ctx context.Context, e *models.CarbonElectronic) (*models.CarbonElectronic, error)
 	ListUserElectronics(ctx context.Context, userID int64) ([]*models.CarbonElectronic, error)
 	CreateElectronicsLog(ctx context.Context, log *models.CarbonElectronicLog) error
 	GetElectronicsLogs(ctx context.Context, deviceID int64) ([]*models.CarbonElectronicLog, error)
+
+	UpdateVehicle(ctx context.Context, v *models.CarbonVehicle) error
+	DeleteVehicle(ctx context.Context, id int64) error
+	DeleteVehicleLogs(ctx context.Context, vehicleID int64) error
+	GetAllVehicleLogsByUser(ctx context.Context, userID int64) ([]*models.CarbonVehicleLog, error)
+	
+	// Electronic methods
+	UpdateElectronic(ctx context.Context, e *models.CarbonElectronic) error
+	DeleteElectronic(ctx context.Context, id int64) error
+	DeleteElectronicLogs(ctx context.Context, deviceID int64) error
+	GetAllElectronicLogsByUser(ctx context.Context, userID int64) ([]*models.CarbonElectronicLog, error)
+
+	
 }
 
 type carbonRepository struct {
@@ -32,8 +45,6 @@ type carbonRepository struct {
 func NewCarbonRepository(db *sql.DB) CarbonRepository {
 	return &carbonRepository{db: db}
 }
-
-// ======================== VEHICLE ========================
 
 func (r *carbonRepository) FindVehicleByID(ctx context.Context, id int64) (*models.CarbonVehicle, error) {
 	var v models.CarbonVehicle
@@ -68,7 +79,7 @@ func (r *carbonRepository) CreateVehicle(ctx context.Context, v *models.CarbonVe
 	if err != nil {
 		return nil, err
 	}
-	
+
 	v.ID = id
 	return v, nil
 }
@@ -89,7 +100,6 @@ func (r *carbonRepository) ListUserVehicles(ctx context.Context, userID int64) (
 		vehicles = append(vehicles, &v)
 	}
 
-	// Check for any error encountered during iteration
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -119,15 +129,12 @@ func (r *carbonRepository) GetVehicleLogs(ctx context.Context, vehicleID int64) 
 		logs = append(logs, &log)
 	}
 
-	// Check for any error encountered during iteration
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
 	return logs, nil
 }
-
-// ======================== ELECTRONICS ========================
 
 func (r *carbonRepository) FindElectronicsByID(ctx context.Context, id int64) (*models.CarbonElectronic, error) {
 	var e models.CarbonElectronic
@@ -162,7 +169,7 @@ func (r *carbonRepository) CreateElectronics(ctx context.Context, e *models.Carb
 	if err != nil {
 		return nil, err
 	}
-	
+
 	e.ID = id
 	return e, nil
 }
@@ -178,7 +185,7 @@ func (r *carbonRepository) ListUserElectronics(ctx context.Context, userID int64
 	for rows.Next() {
 		var e models.CarbonElectronic
 		if err := rows.Scan(&e.ID, &e.UserID, &e.DeviceName, &e.DeviceType, &e.PowerWatts); err != nil {
-		return nil, err
+			return nil, err
 		}
 		electronics = append(electronics, &e)
 	}
@@ -214,6 +221,103 @@ func (r *carbonRepository) GetElectronicsLogs(ctx context.Context, deviceID int6
 	}
 
 	// Check for any error encountered during iteration
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return logs, nil
+}
+
+
+func (r *carbonRepository) UpdateVehicle(ctx context.Context, v *models.CarbonVehicle) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE carbon_vehicles SET vehicle_type = $1, fuel_type = $2, name = $3 WHERE id = $4`,
+		v.VehicleType, v.FuelType, v.Name, v.ID)
+	return err
+}
+
+func (r *carbonRepository) DeleteVehicle(ctx context.Context, id int64) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM carbon_vehicles WHERE id = $1`, id)
+	return err
+}
+
+func (r *carbonRepository) DeleteVehicleLogs(ctx context.Context, vehicleID int64) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM carbon_vehicle_logs WHERE vehicle_id = $1`, vehicleID)
+	return err
+}
+
+func (r *carbonRepository) GetAllVehicleLogsByUser(ctx context.Context, userID int64) ([]*models.CarbonVehicleLog, error) {
+	query := `
+		SELECT cvl.id, cvl.vehicle_id, cvl.start_location, cvl.end_location, 
+		       cvl.distance_km, cvl.duration_minutes, cvl.carbon_emission_g
+		FROM carbon_vehicle_logs cvl
+		JOIN carbon_vehicles cv ON cvl.vehicle_id = cv.id
+		WHERE cv.user_id = $1
+		ORDER BY cvl.id DESC
+	`
+	
+	rows, err := r.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var logs []*models.CarbonVehicleLog
+	for rows.Next() {
+		var log models.CarbonVehicleLog
+		if err := rows.Scan(&log.ID, &log.VehicleID, &log.StartLocation, &log.EndLocation, 
+			&log.DistanceKm, &log.DurationMinutes, &log.CarbonEmission); err != nil {
+			return nil, err
+		}
+		logs = append(logs, &log)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return logs, nil
+}
+
+func (r *carbonRepository) UpdateElectronic(ctx context.Context, e *models.CarbonElectronic) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE carbon_electronics SET device_name = $1, device_type = $2, power_watts = $3 WHERE id = $4`,
+		e.DeviceName, e.DeviceType, e.PowerWatts, e.ID)
+	return err
+}
+
+func (r *carbonRepository) DeleteElectronic(ctx context.Context, id int64) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM carbon_electronics WHERE id = $1`, id)
+	return err
+}
+
+func (r *carbonRepository) DeleteElectronicLogs(ctx context.Context, deviceID int64) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM carbon_electronics_logs WHERE device_id = $1`, deviceID)
+	return err
+}
+
+func (r *carbonRepository) GetAllElectronicLogsByUser(ctx context.Context, userID int64) ([]*models.CarbonElectronicLog, error) {
+	query := `
+		SELECT cel.id, cel.device_id, cel.duration_hours, cel.carbon_emission_g
+		FROM carbon_electronics_logs cel
+		JOIN carbon_electronics ce ON cel.device_id = ce.id
+		WHERE ce.user_id = $1
+		ORDER BY cel.id DESC
+	`
+	
+	rows, err := r.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var logs []*models.CarbonElectronicLog
+	for rows.Next() {
+		var log models.CarbonElectronicLog
+		if err := rows.Scan(&log.ID, &log.DeviceID, &log.DurationHours, &log.CarbonEmission); err != nil {
+			return nil, err
+		}
+		logs = append(logs, &log)
+	}
+
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}

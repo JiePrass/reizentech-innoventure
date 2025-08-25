@@ -27,19 +27,19 @@ func Setup(app *fiber.App, db *sql.DB, mw *middleware.Middlewares) {
 	userMissionRepo := repository.NewMissionRepository(db)
 
 	userMissionService := service.NewMissionService(
-		missionRepo,     // implementasi MissionRepositoryInterface
-		userMissionRepo, // implementasi MissionRepositoryInterface
+		missionRepo,
+		userMissionRepo,
 		repository.NewBadgeRepository(db),
 	)
 
 	storeRepo := repository.NewStoreRepository(db)
-	pointsRepo := repository.NewPointsRepository(db) // Tambahkan ini
-	activityRepo := repository.NewActivityRepository(db) // Tambahkan ini
-	
+	pointsRepo := repository.NewPointsRepository(db)
+	activityRepo := repository.NewActivityRepository(db)
+
 	storeService := service.NewStoreService(
 		storeRepo,
-		pointsRepo,    // Tambahkan points repository
-		activityRepo,  // Tambahkan activity repository
+		pointsRepo,
+		activityRepo,
 	)
 
 	userCustomService := service.NewUserCustomEndpointService(
@@ -51,11 +51,26 @@ func Setup(app *fiber.App, db *sql.DB, mw *middleware.Middlewares) {
 		repository.NewActivityRepository(db),
 	)
 
-	// Initialize controllers
+	chatbotService, err := service.NewGeminiService()
+	if err != nil {
+		println("⚠️ Gagal init GeminiService:", err.Error())
+
+		// fallback route tetap ada
+		api := app.Group("/api/gemini")
+		api.Post("/generate", func(c *fiber.Ctx) error {
+			return c.Status(500).JSON(fiber.Map{
+				"error": "GeminiService not initialized: " + err.Error(),
+			})
+		})
+	} else {
+		controller.InitGeminiController(app, chatbotService, mw)
+	}
+
 	controller.InitAuthController(app, authService, mw)
 	controller.InitCarbonController(app, carbonService, mw)
 	controller.InitMissionController(app, userMissionService, mw)
 	controller.InitStoreController(app, storeService, mw)
 	controller.InitUserProfileController(app, profileService, mw)
 	controller.InitUserCustomEndpointController(app, userCustomService, mw)
+
 }

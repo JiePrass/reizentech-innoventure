@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -28,49 +29,42 @@ type AuthServiceInterface interface {
 type AuthService struct {
 	userRepo     repository.UserRepositoryInterface
 	activityRepo repository.ActivityRepositoryInterface
-	missionRepo  repository.CheckMissionRepositoryInterface // TAMBAH INI
+	missionRepo  repository.CheckMissionRepositoryInterface
 }
 
-// Update constructor
 func NewAuthService(
 	userRepo repository.UserRepositoryInterface, 
 	activityRepo repository.ActivityRepositoryInterface,
-	missionRepo repository.CheckMissionRepositoryInterface, // TAMBAH INI
+	missionRepo repository.CheckMissionRepositoryInterface,
 ) *AuthService {
 	return &AuthService{
 		userRepo:     userRepo,
 		activityRepo: activityRepo,
-		missionRepo:  missionRepo, // TAMBAH INI
+		missionRepo:  missionRepo,
 	}
 }
 
-// Hash password
 func hashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	return string(bytes), err
 }
 
-// Check password
 func checkPassword(hashedPassword, password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 	return err == nil
 }
 
-// Register
 func (s *AuthService) Register(ctx context.Context, req *dto.RegisterDTO) (*models.User, error) {
-	// Cek email sudah ada
 	exists, _ := s.userRepo.FindByEmail(ctx, req.Email)
 	if exists != nil {
 		return nil, errors.New("email sudah terdaftar")
 	}
 
-	// Hash password
 	hashedPass, err := hashPassword(req.Password)
 	if err != nil {
 		return nil, err
 	}
 
-	// Buat object User
 	user := &models.User{
 		Username:  req.Username,
 		Email:     req.Email,
@@ -86,23 +80,19 @@ func (s *AuthService) Register(ctx context.Context, req *dto.RegisterDTO) (*mode
 		user.GoogleID = req.GoogleID
 	}
 
-	// Profile default (cuma user_id + created_at nanti diisi di repo)
 	profile := &models.UserProfile{
 		CreatedAt: time.Now(),
 	}
 
-	// Insert user + profile sekaligus dalam satu transaction
 	if err := s.userRepo.Create(ctx, user, profile); err != nil {
 		return nil, err
 	}
 
-	// Buat token verifikasi email
 	token, err := helpers.GenerateEmailVerificationToken(fmt.Sprint(user.ID), user.Email)
 	if err != nil {
 		return nil, err
 	}
 
-	// Kirim email verifikasi langsung
 	if err := helpers.SendEmailVerification(user.Email, token); err != nil {
 		return nil, err
 	}
@@ -149,12 +139,16 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginDTO) (*models.Use
 }
 // Get profile
 func (s *AuthService) GetProfile(ctx context.Context, userID int64) (*models.User, error) {
-	user, _, err := s.userRepo.FindByID(ctx, userID) // tangkap 3 return values, tapi profile di-ignore
-	if err != nil {
-		return nil, errors.New("user tidak ditemukan")
-	}
-	return user, nil
+    user, err := s.userRepo.FindByID(ctx, userID)
+    if err != nil {
+        if errors.Is(err, sql.ErrNoRows) {
+            return nil, errors.New("user tidak ditemukan")
+        }
+        return nil, err
+    }
+    return user, nil
 }
+
 
 // Verify email
 func (s *AuthService) VerifyEmail(ctx context.Context, userID int64) error {
@@ -194,7 +188,7 @@ func (s *AuthService) ResetPassword(ctx context.Context, token, newPassword stri
 
 // Update password
 func (s *AuthService) UpdatePassword(ctx context.Context, userID int64, oldPassword, newPassword string) error {
-	user, _, err := s.userRepo.FindByID(ctx, userID)
+	user, err := s.userRepo.FindByID(ctx, userID)
 	if err != nil || user == nil {
 		return errors.New("user tidak ditemukan")
 	}

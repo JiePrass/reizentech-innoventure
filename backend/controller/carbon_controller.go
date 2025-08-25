@@ -23,13 +23,19 @@ func InitCarbonController(app *fiber.App, svc service.CarbonServiceInterface, mw
 	
 	public.Post("/vehicle", ctrl.CreateVehicle)
 	public.Get("/vehicles", ctrl.ListUserVehicles)
+	public.Post("/vehicle", ctrl.EditVehicle)
+	public.Delete("/vehicle/:id", ctrl.DeleteVehicle)
 	public.Post("/vehicle-log", ctrl.AddVehicleLog)
 	public.Get("/vehicle/:id/logs", ctrl.GetVehicleLogs)
+	public.Get("/vehicle/logs", ctrl.GetAllVehicleLogs)
 
 	public.Post("/electronic", ctrl.CreateElectronic)
 	public.Get("/electronics", ctrl.ListUserElectronics)
+	public.Put("/electronics/:id", ctrl.EditElectronic)
+	public.Delete("/electronics/:id", ctrl.DeleteElectronic)
 	public.Post("/electronics-log", ctrl.AddElectronicsLog)
 	public.Get("/electronic/:id/logs", ctrl.GetElectronicsLogs)
+	public.Get("/electronics/logs", ctrl.GetAllElectronicLogs)
 	
 }
 
@@ -157,4 +163,103 @@ func (c *CarbonController) GetElectronicsLogs(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusOK).JSON(helpers.SuccessResponseWithData(true, "electronics logs retrieved successfully", logs))
 }
 
-// Electronics methods remain similar but would follow the same pattern
+
+func (c *CarbonController) EditVehicle(ctx *fiber.Ctx) error {
+	claims := helpers.GetUserClaims(ctx)
+	userID, _ := strconv.ParseInt(claims.UserID, 10, 64)
+
+	vehicleID, err := strconv.ParseInt(ctx.Params("id"), 10, 64)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(helpers.BasicResponse(false, "invalid vehicle ID"))
+	}
+
+	dto := new(dto.EditVehicleDTO)
+	if err := ctx.BodyParser(dto); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(helpers.BasicResponse(false, "invalid body"))
+	}
+
+	vehicle, err := c.carbonService.EditVehicle(ctx.Context(), userID, vehicleID, dto)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(helpers.BasicResponse(false, err.Error()))
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(helpers.SuccessResponseWithData(true, "vehicle updated successfully", vehicle))
+}
+
+func (c *CarbonController) DeleteVehicle(ctx *fiber.Ctx) error {
+	claims := helpers.GetUserClaims(ctx)
+	userID, _ := strconv.ParseInt(claims.UserID, 10, 64)
+
+	vehicleID, err := strconv.ParseInt(ctx.Params("id"), 10, 64)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(helpers.BasicResponse(false, "invalid vehicle ID"))
+	}
+
+	if err := c.carbonService.DeleteVehicle(ctx.Context(), userID, vehicleID); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(helpers.BasicResponse(false, err.Error()))
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(helpers.BasicResponse(true, "vehicle deleted successfully"))
+}
+
+func (c *CarbonController) EditElectronic(ctx *fiber.Ctx) error {
+	claims := helpers.GetUserClaims(ctx)
+	userID, _ := strconv.ParseInt(claims.UserID, 10, 64)
+
+	deviceID, err := strconv.ParseInt(ctx.Params("id"), 10, 64)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(helpers.BasicResponse(false, "invalid device ID"))
+	}
+
+	dto := new(dto.EditElectronicDTO)
+	if err := ctx.BodyParser(dto); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(helpers.BasicResponse(false, "invalid body"))
+	}
+
+	electronic, err := c.carbonService.EditElectronic(ctx.Context(), userID, deviceID, dto)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(helpers.BasicResponse(false, err.Error()))
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(helpers.SuccessResponseWithData(true, "electronic device updated successfully", electronic))
+}
+
+func (c *CarbonController) DeleteElectronic(ctx *fiber.Ctx) error {
+	claims := helpers.GetUserClaims(ctx)
+	userID, _ := strconv.ParseInt(claims.UserID, 10, 64)
+
+	deviceID, err := strconv.ParseInt(ctx.Params("id"), 10, 64)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(helpers.BasicResponse(false, "invalid device ID"))
+	}
+
+	if err := c.carbonService.DeleteElectronic(ctx.Context(), userID, deviceID); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(helpers.BasicResponse(false, err.Error()))
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(helpers.BasicResponse(true, "electronic device deleted successfully"))
+}
+
+func (c *CarbonController) GetAllVehicleLogs(ctx *fiber.Ctx) error {
+	claims := helpers.GetUserClaims(ctx)
+	userID, _ := strconv.ParseInt(claims.UserID, 10, 64)
+
+	logs, err := c.carbonService.GetAllVehicleLogs(ctx.Context(), userID)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(helpers.BasicResponse(false, err.Error()))
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(helpers.SuccessResponseWithData(true, "all vehicle logs retrieved successfully", logs))
+}
+
+func (c *CarbonController) GetAllElectronicLogs(ctx *fiber.Ctx) error {
+	claims := helpers.GetUserClaims(ctx)
+	userID, _ := strconv.ParseInt(claims.UserID, 10, 64)
+
+	logs, err := c.carbonService.GetAllElectronicLogs(ctx.Context(), userID)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(helpers.BasicResponse(false, err.Error()))
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(helpers.SuccessResponseWithData(true, "all electronic logs retrieved successfully", logs))
+}

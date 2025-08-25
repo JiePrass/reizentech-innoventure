@@ -546,7 +546,7 @@ func (r *checkMissionRepository) CheckUserMissionsByCriteriaType(ctx context.Con
 		}
 
 		if completed {
-			fmt.Printf("User %d completed mission: %s\n", userID, mission.Title)
+			fmt.Printf("User %d completed mission: %s\n", userID, mission.Title)	
 		}
 	}
 
