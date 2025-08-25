@@ -79,7 +79,7 @@ const data = {
   navGamifikasi: [
     {
       title: "Misi",
-      url: "/mission",
+      url: "/missions",
       icon: IconTargetArrow,
     },
     {
