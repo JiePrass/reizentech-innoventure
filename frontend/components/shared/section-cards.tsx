@@ -1,3 +1,5 @@
+"use client"
+
 import { IconTrendingUp } from "@tabler/icons-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -9,11 +11,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { GetElectricityTracker } from "@/helpers/GetElectricityTracker"
+import { GetCarbonElectronicLogs } from "@/helpers/GetCarbonElectronicLog"
 import { useEffect, useState } from "react"
 
 export function SectionCards() {
-  const { data: dataElectricty } = GetElectricityTracker()
+  const { data: dataElectricty } = GetCarbonElectronicLogs()
   
   const [totalEmission, setTotalEmission] = useState(0)
 

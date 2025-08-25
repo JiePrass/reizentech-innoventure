@@ -3,20 +3,20 @@ import * as React from "react"
 
 interface ResponseData {
   status: string;
-  data?: any[];
+  data?: any[]; // Bisa disesuaikan dengan data yang diperlukan untuk carbon log
   message: string;
 }
 
-export function GetElectricityTracker() {
+export function GetCarbonElectronicLogs() {
   const [data, setData] = React.useState<ResponseData | null>(null)
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
 
   React.useEffect(() => {
-    const fetchAuth = async () => {
+    const fetchCarbonLogs = async () => {
       try {
         const res = await fetch(
-          process.env.NEXT_PUBLIC_API_URL + "/api/carbon/electronics",
+          process.env.NEXT_PUBLIC_API_URL + "/api/carbon/electronics/logs",
           {
             headers: {
               "Authorization": "Bearer " + localStorage.getItem("authtoken"),
@@ -25,14 +25,12 @@ export function GetElectricityTracker() {
           }
         )
 
-
         const result = await res.json()
         setData(result)
       } catch (err: unknown) {
-        
         let message = "Terjadi kesalahan"
         if (err instanceof Error) {
-            message = err.message
+          message = err.message
         }
         setError(message)
       } finally {
@@ -40,7 +38,7 @@ export function GetElectricityTracker() {
       }
     }
 
-    fetchAuth()
+    fetchCarbonLogs()
   }, [])
 
   return { data, loading, error }
