@@ -125,18 +125,18 @@ export default function RewardStorePage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
                 {paginatedProducts.map((product) => (
                     <Card key={product.id} className="overflow-hidden border-none shadow-none gap-2">
-                        <div className="relative flex items-center justify-center hover:shadow-md transition aspect-square border border-gray-200 rounded-xl">
+                        <div className="relative flex items-center justify-center transition aspect-square">
                             <Image
                                 src={product.image_url}
                                 alt={product.name}
                                 width={150}
                                 height={150}
-                                className="object-contain"
+                                className="object-contain w-full"
                             />
                         </div>
                         <CardContent className="p-0">
                             <h3 className="text-xl font-medium">{product.name}</h3>
-                            <div className="flex justify-between items-center mb-2">
+                            <div className="flex justify-between items-center mb-2 gap-8">
                                 <p className="text-sm text-muted-foreground">{product.description}</p>
                                 <div className="flex gap-2 items-center">
                                     <p className="font-semibold">{product.price_points}</p>
