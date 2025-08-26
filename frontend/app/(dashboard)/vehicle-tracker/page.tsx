@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import { useState } from "react"
 import VehicleSlider from "@/components/shared/vehicle-slider"
 import { Badge } from "@/components/ui/badge"
@@ -14,8 +13,8 @@ import {
 } from "@/components/ui/card"
 import { IconTrendingUp } from "@tabler/icons-react"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
-import { Button } from "@/components/ui/button"
 import { GetVehicleTracker } from "@/helpers/GetVehicleTracker"
+import VehicleSliderPublic from "@/components/shared/vehicle-slider-public"
 
 // Dummy data grafik
 const data = [
@@ -28,65 +27,59 @@ const data = [
     { name: "50k", value: 70 },
 ]
 
-type Vehicle = {
-    id: number
-    title: string
-    type: "pribadi" | "umum"
-    image: string
-    total: string
-    percentage: string
-    active: boolean
-}
-
-const kendaraanUmum: Vehicle[] = [
-    {
-        id: 1,
-        title: "Sepeda Motor 1",
-        type: "pribadi",
-        image: "/icons/motor.svg",
-        total: "9,82 kg CO₂e",
-        percentage: "5,63%",
-        active: true,
-    },
-    {
-        id: 2,
-        title: "Mobil Pribadi 1",
-        type: "pribadi",
-        image: "/icons/motor.svg",
-        total: "0 kg CO₂e",
-        percentage: "6,35%",
-        active: false,
-    },
-    {
-        id: 3,
-        title: "Mobil Pribadi 2",
-        type: "pribadi",
-        image: "/icons/motor.svg",
-        total: "0 kg CO₂e",
-        percentage: "0%",
-        active: false,
-    },
-    {
-        id: 4,
-        title: "Mobil Pribadi 2",
-        type: "pribadi",
-        image: "/icons/motor.svg",
-        total: "0 kg CO₂e",
-        percentage: "0%",
-        active: false,
-    },
-]
 
 export default function VehicleTracker() {
-    const [vehicles] = useState<Vehicle[]>(kendaraanUmum)
     
+    const [location, setLocation] = useState<{lat: number, lng: number} | null>(null)
+    const [error, setError] = useState<string | null>(null)
+    
+    const getLocation = () => {
+        if (!navigator.geolocation) {
+        setError("Geolocation tidak didukung oleh browser ini.")
+        return
+        }
+
+        navigator.geolocation.getCurrentPosition(
+        (position) => {
+            setLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+            })
+            setError(null)
+        },
+        (err) => {
+            setError("Gagal mendapatkan lokasi: " + err.message)
+        },
+        {
+            enableHighAccuracy: true, // lebih akurat (GPS, tapi lebih lama & boros baterai)
+            timeout: 10000, // max tunggu 10 detik
+            maximumAge: 0, // selalu ambil posisi terbaru
+        }
+        )
+    }
+
     const { data: vehicle } = GetVehicleTracker()
 
     console.log(vehicle)
 
     return (
         <div className="p-6 space-y-6 overflow-x-hidden">
+             <div className="p-4">
+                <button 
+                    onClick={getLocation} 
+                    className="px-4 py-2 bg-green-600 text-white rounded"
+                >
+                    Aktifkan GPS
+                </button>
 
+                {location && (
+                    <p className="mt-2">
+                    Latitude: {location.lat}, Longitude: {location.lng}
+                    </p>
+                )}
+
+                {error && <p className="mt-2 text-red-500">{error}</p>}
+            </div>
             {/* Statistik Cards */}
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <Card className="gap-0">
@@ -140,39 +133,8 @@ export default function VehicleTracker() {
             </div>
 
             <VehicleSlider />
+            <VehicleSliderPublic />
 
-            <div className="flex flex-col space-y-6">
-                <h2 className="text-xl font-semibold">Kendaraan Pribadi</h2>
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {vehicles.map((v) => (
-                        <Card key={v.id}>
-                            <CardHeader className="flex flex-col items-center justify-center">
-                                <Image
-                                    src={v.image}
-                                    alt={v.title}
-                                    width={80}
-                                    height={80}
-                                    className="aspect-square rounded-full p-1 object-contain bg-[#ECECEC]"
-                                />
-                                <CardTitle className="mt-2 text-center">{v.title}</CardTitle>
-                            </CardHeader>
-                            <CardContent className="text-center space-y-2">
-                                <p className="text-sm text-muted-foreground">
-                                    Total Karbon <br /> {v.title}
-                                </p>
-                                <p className="text-lg font-semibold">{v.total}</p>
-                                <p className="text-xs text-gray-500">{v.percentage}</p>
-                                <Button
-                                    variant={v.active ? "destructive" : "outline"}
-                                    className="w-full"
-                                >
-                                    {v.active ? "Matikan Kendaraan" : "Aktifkan Kendaraan"}
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-            </div>
 
             {/* Grafik Tren */}
             <Card>

@@ -41,16 +41,17 @@ const kendaraanPribadi: Vehicle[] = [
   },
 ]
 
-export default function VehicleSlider() {
+export default function VehicleSliderPublic() {
   const { data: dataMe } = useAuthMe()
   const [vehicles, setVehicles] = useState<Vehicle[]>(kendaraanPribadi)
   const { data: vehicle } = GetVehicleTracker()
 
   console.log(vehicle)
+
   
   useEffect(() => {
         if (vehicle && vehicle?.data && vehicle?.data?.length > 0 ) {
-            const initialDevices = vehicle?.data?.filter((item) => item.vehicle_type !== 'public_transport').map((d) => ({
+            const initialDevices = vehicle?.data?.filter((item) => item.vehicle_type === 'public_transport').map((d) => ({
                 id: d.id,
                 date: d.created_at.split("T")[0],
                 title: d.name,
@@ -107,7 +108,7 @@ export default function VehicleSlider() {
 
   return (
     <section className="space-y-6">
-      <h2 className="text-xl font-semibold">Kendaraan Pribadi</h2>
+      <h2 className="text-xl font-semibold">Kendaraan Umum</h2>
 
       <div className="w-full overflow-hidden">
         <ScrollArea className="max-w-[166vh] whitespace-nowrap">

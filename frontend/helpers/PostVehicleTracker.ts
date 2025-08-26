@@ -3,7 +3,6 @@ interface ElectronicPayload {
   name: string;
   vehicle_type: string;
   fuel_type: string;
-  power_watts: number;
   user_id?: number | null;
 }
 
