@@ -26,7 +26,7 @@ type Vehicle = {
   watchId?: number | null
 }
 
-export default function VehicleSliderPublic() {
+export default function VehicleSlider() {
   const { data: dataMe } = useAuthMe()
   const { data: vehicle } = GetVehicleTracker()
 
@@ -34,10 +34,11 @@ export default function VehicleSliderPublic() {
 
   useEffect(() => {
     if (vehicle?.data && vehicle?.data?.length > 0) {
+      console.log(vehicle.data)
       const initialDevices = vehicle?.data
         ?.filter((item) => item.VehicleType === "public_transport")
         .map((d) => ({
-          id: d.id,
+          id: d.ID,
           title: d.Name,
           image: "/icons/motor.svg",
           type: d.type,
