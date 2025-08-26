@@ -22,7 +22,6 @@ type Middlewares struct {
 	DB     *sql.DB
 }
 
-// Rate limiter di Fiber
 func InitRateLimiterConfig() fiber.Handler {
 	return limiter.New(limiter.Config{
 		Max:        30,
@@ -88,6 +87,48 @@ func initJWTMiddleware() fiber.Handler {
 
 func VerifyEmailMiddleware(db *sql.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		claims := helpers.GetUserClaims(c)
+		if claims == nil {
+			return c.Status(fiber.StatusUnauthorized).JSON(
+				helpers.BasicResponse(false, "invalid token claims"),
+			)
+		}
+
+		userID, err := strconv.ParseInt(claims.UserID, 10, 64)
+		if err != nil {
+			return c.Status(fiber.StatusUnauthorized).JSON(
+				helpers.BasicResponse(false, "invalid user id in token"),
+			)
+		}
+
+		var emailVerifiedAt sql.NullTime
+		err = db.QueryRow("SELECT email_verified_at FROM users WHERE id = $1", userID).Scan(&emailVerifiedAt)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return c.Status(fiber.StatusUnauthorized).JSON(
+					helpers.BasicResponse(false, "user tidak ditemukan"),
+				)
+			}
+			fmt.Println("DB error:", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(
+				helpers.BasicResponse(false, "internal server error"),
+			)
+		}
+
+		if !emailVerifiedAt.Valid {
+			return c.Status(fiber.StatusForbidden).JSON(
+				helpers.BasicResponse(false, "email belum diverifikasi"),
+			)
+		}
+
+		return c.Next()
+	}
+}
+
+
+
+func AdminMiddleware(db *sql.DB) fiber.Handler {
+	return func(c *fiber.Ctx) error {
 		userToken := c.Locals("user")
 		if userToken == nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(
@@ -110,24 +151,23 @@ func VerifyEmailMiddleware(db *sql.DB) fiber.Handler {
 			)
 		}
 
-		// Cek email_verified_at di DB
-		var emailVerifiedAt sql.NullTime
-		err = db.QueryRow("SELECT email_verified_at FROM users WHERE id = $1", userID).Scan(&emailVerifiedAt)
+		var role string
+		err = db.QueryRow("SELECT role FROM users WHERE id = $1", userID).Scan(&role)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				return c.Status(fiber.StatusUnauthorized).JSON(
 					helpers.BasicResponse(false, "user tidak ditemukan"),
 				)
 			}
-			fmt.Println("DB error:", err) // supaya kelihatan error di console
+			fmt.Println("DB error:", err)
 			return c.Status(fiber.StatusInternalServerError).JSON(
 				helpers.BasicResponse(false, "internal server error"),
 			)
 		}
 
-		if !emailVerifiedAt.Valid {
+		if role != "admin" {
 			return c.Status(fiber.StatusForbidden).JSON(
-				helpers.BasicResponse(false, "email belum diverifikasi"),
+				helpers.BasicResponse(false, "akses hanya untuk admin"),
 			)
 		}
 

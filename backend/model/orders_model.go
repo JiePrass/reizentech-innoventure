@@ -3,16 +3,9 @@ package models
 import "time"
 
 type Order struct {
-	ID            int64     `db:"id"`
-	UserID        int64     `db:"user_id"`
-	CouponID      *int64    `db:"coupon_id"`
-	TotalCents    int       `db:"total_cents"`
-	DiscountCents int       `db:"discount_cents"`
-	FinalCents    int       `db:"final_cents"`
-	Status        string    `db:"status"`
-	CreatedAt     time.Time `db:"created_at"`
-}
-
-func (Order) TableName() string {
-	return "orders"
+	ID          int64     `json:"id"`
+	UserID      int64     `json:"user_id"`
+	TotalPoints int       `json:"total_points"`
+	Status      string    `json:"status"`
+	CreatedAt   time.Time `json:"created_at"`
 }

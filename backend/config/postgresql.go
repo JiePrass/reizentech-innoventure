@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"time"
 
-	_ "github.com/lib/pq"
+	_ "github.com/go-sql-driver/mysql"
 )
 
-func NewPostgresConnection(host, port, user, password, dbname string) (*sql.DB, error) {
-	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
+func NewMySQLConnection(host, port, user, password, dbname string) (*sql.DB, error) {
+	// Format connection string MySQL
+	connStr := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true",
+		user, password, host, port, dbname)
 
-	db, err := sql.Open("postgres", connStr)
+	db, err := sql.Open("mysql", connStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database connection: %w", err)
 	}
@@ -20,7 +21,7 @@ func NewPostgresConnection(host, port, user, password, dbname string) (*sql.DB, 
 	if err = db.Ping(); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	} else {
-		fmt.Println("Connected to PostgreSQL database successfully")
+		fmt.Println("Connected to MySQL database successfully")
 	}
 
 	db.SetMaxOpenConns(50)

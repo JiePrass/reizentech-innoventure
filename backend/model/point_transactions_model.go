@@ -3,13 +3,13 @@ package models
 import "time"
 
 type PointTransaction struct {
-	ID            int64     `db:"id"`
-	UserID        int64     `db:"user_id"`
-	Amount        int       `db:"amount"`
-	Direction     string    `db:"direction"`
-	Source        string    `db:"source"`
-	ReferenceType *string   `db:"reference_type"`
-	ReferenceID   *int64    `db:"reference_id"`
-	Note          *string   `db:"note"`
-	CreatedAt     time.Time `db:"created_at"`
+	ID            int64     `json:"id"`
+	UserID        int64     `json:"user_id"`
+	Amount        int       `json:"amount"`
+	Direction     string    `json:"direction"`
+	Source        string    `json:"source"`
+	ReferenceType string    `json:"reference_type"`
+	ReferenceID   int64     `json:"reference_id"`
+	Note          string    `json:"note"`
+	CreatedAt     time.Time `json:"created_at"`
 }

@@ -2,14 +2,15 @@ package models
 
 import "time"
 
+// Di model/user.go
 type User struct {
-	ID        int64     `db:"id"`
-	Username  string    `db:"username"`
-	Password  string    `db:"password"`
-	Email     string    `db:"email"`
-	Role      string    `db:"role"`
-	GoogleID  *int64    `db:"google_id"`
-	CreatedAt time.Time `db:"created_at"`
-
-	Profile *UserProfile `json:"profile,omitempty"`
+	ID              int64          `json:"id" db:"id"`
+	Username        string         `json:"username" db:"username"`
+	Email           string         `json:"email" db:"email"`
+	Password        string         `json:"password" db:"password"`
+	Role            string         `json:"role" db:"role"`
+	GoogleID        *string        `json:"google_id,omitempty" db:"google_id"` // Ubah menjadi string
+	EmailVerifiedAt *time.Time     `json:"email_verified_at,omitempty" db:"email_verified_at"`
+	CreatedAt       time.Time      `json:"created_at" db:"created_at"`
+	Profile         *UserProfile   `json:"profile,omitempty"`
 }
