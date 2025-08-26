@@ -1,9 +1,7 @@
 /* eslint-disable */
-interface ElectronicPayload {
-  device_name: string;
-  device_type: string;
-  power_watts: number;
-  user_id?: number | null;
+interface CarbonLogPayload {
+  device_id: number;
+  duration_hours: number;
 }
 
 interface ResponseData {
@@ -12,10 +10,10 @@ interface ResponseData {
   message: string;
 }
 
-export async function PostElectricityTracker(payload: ElectronicPayload): Promise<ResponseData> {
+export async function PostCarbonElectronicLog(payload: CarbonLogPayload): Promise<ResponseData> {
   try {
     const res = await fetch(
-      process.env.NEXT_PUBLIC_API_URL + "/api/carbon/electronic",
+      process.env.NEXT_PUBLIC_API_URL + "/api/carbon/electronics-log", // Ganti endpoint sesuai dengan yang dibutuhkan
       {
         method: "POST",
         headers: {
@@ -26,9 +24,10 @@ export async function PostElectricityTracker(payload: ElectronicPayload): Promis
       }
     );
 
-    // if (!res.ok) {
-    //   throw new Error("Gagal menambahkan data elektronik");
-    // }
+    // Menangani status respon jika perlu
+    if (!res.ok) {
+      throw new Error("Gagal menambahkan log karbon");
+    }
 
     return await res.json();
   } catch (err: unknown) {

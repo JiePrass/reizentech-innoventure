@@ -1,33 +1,91 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import {
   Card,
   CardHeader,
   CardTitle,
-  CardDescription,
   CardFooter,
 } from "@/components/ui/card"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
-import { SectionCards } from "@/components/shared/section-cards"
-import { useAuthMe } from "@/helpers/AuthMe"
+import { SectionSumCards } from "@/components/shared/section-summary-cards"
+import { fetchProfile } from "@/helpers/fetchProfile"
 
-// Dummy data grafik
-const data = [
-  { name: "1k", value: 20 },
-  { name: "5k", value: 64 },
-  { name: "10k", value: 45 },
-  { name: "20k", value: 78 },
-  { name: "30k", value: 35 },
-  { name: "40k", value: 60 },
-  { name: "50k", value: 70 },
-]
+// Helper untuk membuat data grafik berdasarkan emisi kendaraan dan elektronik
+const formatCarbonData = (profileData: any) => {
+  const vehicleCarbon = profileData?.monthly_vehicle_carbon || []
+  const electronicCarbon = profileData?.monthly_electronic_carbon || []
+
+  // Gabungkan data kendaraan dan elektronik
+  const combinedData = [...vehicleCarbon, ...electronicCarbon]
+
+  // Gabungkan data yang memiliki bulan yang sama, jumlahkan emisi karbonnya
+  const carbonMap = new Map()
+
+  combinedData.forEach(item => {
+    const month = new Date(item.month).toLocaleString('default', { month: 'short' })
+    if (carbonMap.has(month)) {
+      carbonMap.set(month, carbonMap.get(month) + item.total_carbon_emission_g)
+    } else {
+      carbonMap.set(month, item.total_carbon_emission_g)
+    }
+  })
+
+
+  // Tentukan bulan pertama (bulan paling awal) dan bulan terakhir
+  const firstMonth = new Date(Math.min(...combinedData.map(item => new Date(item.month).getTime())))
+  const lastMonth = new Date()
+
+  // Generate data bulan yang hilang (misalnya Juli jika tidak ada data)
+  const completeData = []
+  const currentMonth = firstMonth
+
+  while (currentMonth <= lastMonth) {
+    const monthName = currentMonth.toLocaleString('default', { month: 'short' })
+    const value = carbonMap.has(monthName) ? carbonMap.get(monthName) : 0
+    completeData.push({ name: monthName, value })
+
+    // Tambahkan satu bulan
+    currentMonth.setMonth(currentMonth.getMonth() + 1)
+  }
+
+  // Ambil hanya 6 bulan terakhir
+  return completeData.slice(-6)
+}
 
 export default function DashboardPage() {
-  const { data: dataUser, loading, error } = useAuthMe()
+  const [carbonData, setCarbonData] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)  // Perbaikan tipe error
 
-  if (loading) return console.log('loadingg..')
-  if (error) return console.log('error get me..', error)
+  useEffect(() => {
+    const loadData = async () => {
+      const token = localStorage.getItem("authtoken") // Ganti dengan token yang sesuai
+      if (!token) {
+        setError("Token tidak ditemukan.")
+        setLoading(false)
+        return
+      }
+
+      const profile = await fetchProfile(token)
+
+      if (profile) {
+        const data = formatCarbonData(profile)
+        setCarbonData(data)
+      } else {
+        setError("Gagal memuat data.")
+      }
+      setLoading(false)
+    }
+
+    loadData()
+  }, [])
+
+  if (loading) return <div>Loading...</div>
+  if (error) return <div>{error}</div>
+
   return (
     <div className="p-6 space-y-6">
       {/* Header Greeting */}
@@ -35,7 +93,7 @@ export default function DashboardPage() {
         <Image src="/images/dashboard.png" alt="" width={200} height={200} className="object-contain md:hidden" />
         <div>
           <h1 className="text-2xl font-semibold">
-            Hallo, <span className="text-primary">{dataUser?.data?.Username ?? 'Guest'}</span>
+            Hallo, <span className="text-primary">JiePrass</span>
           </h1>
           <p className="text-muted-foreground max-w-sm">
             Anda telah berkontribusi mengurangi emisi karbon sebesar <span className="font-semibold">34,54 kg CO₂e</span> bulan ini
@@ -48,19 +106,18 @@ export default function DashboardPage() {
       </div>
 
       {/* Statistik Cards */}
-      <SectionCards />
+      <SectionSumCards />
 
       {/* Grafik Tren */}
       <Card>
         <CardHeader>
           <CardTitle>Tren Pengurangan Karbon Bulanan</CardTitle>
-          <CardDescription>Oktober</CardDescription>
         </CardHeader>
         <CardFooter>
           <div className="w-full overflow-x-auto">
             <div className="h-64 min-w-[600px]">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data}>
+                <LineChart data={carbonData}>
                   <XAxis dataKey="name" />
                   <YAxis />
                   <Tooltip />
