@@ -60,7 +60,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "http://localhost:3000, https://reizentech-innoventure.vercel.app",
-		AllowMethods: "GET,POST,PUT,DELETE,OPTIONS",
+		AllowMethods: "GET,POST,PUT,DELETE,OPTIONS,PATCH",
 	}))
 
 	// Initialize middleware dan routes
