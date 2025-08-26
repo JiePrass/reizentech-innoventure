@@ -26,7 +26,7 @@ type Vehicle = {
   watchId?: number | null
 }
 
-export default function VehicleSlider() {
+export default function VehicleSliderPublic() {
   const { data: dataMe } = useAuthMe()
   const { data: vehicle } = GetVehicleTracker()
 
