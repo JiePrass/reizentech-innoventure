@@ -2,8 +2,8 @@
 "use client"
 
 import Image from "next/image"
-import { ChevronDown, LogOut, Settings, User } from "lucide-react"
-import { IconBellFilled } from "@tabler/icons-react"
+import { ChevronDown, LogOut, User } from "lucide-react"
+import { IconBellFilled, IconShoppingBag } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
@@ -138,14 +138,14 @@ export function AppHeader() {
               <DropdownMenuLabel>Akun Saya</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem>
-                <Link href="/profile">
+                <Link href="/profile" className="flex gap-1">
                   <User className="mr-2 h-4 w-4" />
                   <span>Profil</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link href="/order">
-                  <User className="mr-2 h-4 w-4" />
+                <Link href="/order" className="flex gap-1">
+                  <IconShoppingBag className="mr-2 h-4 w-4" />
                   <span>Order</span>
                 </Link>
               </DropdownMenuItem>
