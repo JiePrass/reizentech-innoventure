@@ -150,8 +150,7 @@ export default function VehicleSlider() {
             end_lon: longitude,
           })
 
-          if (res) {
-            
+          if (res) {            
             console.log(res)
           }
 
