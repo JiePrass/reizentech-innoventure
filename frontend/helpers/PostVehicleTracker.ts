@@ -13,11 +13,7 @@ interface ResponseData {
   message: string;
 }
 
-<<<<<<<< HEAD:frontend/helpers/AddElectricityDevice.ts
-export async function AddElectricityDevice(payload: ElectronicPayload): Promise<ResponseData> {
-========
 export async function PostVehicleTracker(payload: ElectronicPayload): Promise<ResponseData> {
->>>>>>>> main:frontend/helpers/PostVehicleTracker.ts
   try {
     const res = await fetch(
       process.env.NEXT_PUBLIC_API_URL + "/api/carbon/vehicle",

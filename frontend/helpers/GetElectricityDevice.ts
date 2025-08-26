@@ -1,19 +1,27 @@
-import * as React from "react"
-/* eslint-disable */
+import { useState, useEffect } from "react";
+
+interface DeviceTypes {
+  id: number;
+  user_id: number;
+  device_name: string;
+  device_type: string;
+  power_watts: number;
+  created_at: string;
+}
 
 interface ResponseData {
-  status: string;
-  data?: any[];
+  status: boolean;
   message: string;
+  data: DeviceTypes[];
 }
 
 export function GetElectricityDevice() {
-  const [data, setData] = React.useState<ResponseData | null>(null)
-  const [loading, setLoading] = React.useState(true)
-  const [error, setError] = React.useState<string | null>(null)
+  const [data, setData] = useState<ResponseData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  React.useEffect(() => {
-    const fetchAuth = async () => {
+  useEffect(() => {
+    const fetchElectricityDevices = async () => {
       try {
         const res = await fetch(
           process.env.NEXT_PUBLIC_API_URL + "/api/carbon/electronics",
@@ -25,14 +33,16 @@ export function GetElectricityDevice() {
           }
         )
 
-
         const result = await res.json()
-        setData(result)
+        if (result.status) {
+          setData(result)
+        } else {
+          setError(result.message)
+        }
       } catch (err: unknown) {
-        
         let message = "Terjadi kesalahan"
         if (err instanceof Error) {
-            message = err.message
+          message = err.message
         }
         setError(message)
       } finally {
@@ -40,7 +50,7 @@ export function GetElectricityDevice() {
       }
     }
 
-    fetchAuth()
+    fetchElectricityDevices()
   }, [])
 
   return { data, loading, error }

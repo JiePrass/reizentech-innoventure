@@ -4,7 +4,7 @@ import { useState } from "react"
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -12,51 +12,60 @@ import { IconDots, IconPencil, IconTrash } from "@tabler/icons-react"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { UpdateElectricityTracker } from "@/helpers/UpdateElectricityTracker"
-import { DeleteElectricityTracker } from "@/helpers/DeleteElectricityTracker"
+import { UpdateElectricityDevice } from "@/helpers/UpdateElectricityDevice"
+import { DeleteElectricityDevice } from "@/helpers/DeleteElectricityDevice"
+import EditDeviceModal from "./edit-device-modal"
 
-type Device = {
+type DeviceTypes = {
   id: number
-  device_name: string
-  device_type: string
+  name: string
+  type: string
   power_watts: number
+  status: string
 }
 
 interface DeviceTableProps {
-  devices: Device[]
-  onUpdate: (device: Device) => void
-  onDelete: (id: number) => void
+  devices: DeviceTypes[]; 
+  onUpdate: (updatedDevice: DeviceTypes) => void;
+  onDelete: (id: number) => void;
 }
 
 export default function DeviceTable({ devices, onUpdate, onDelete }: DeviceTableProps) {
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
-  const [selectedDevice, setSelectedDevice] = useState<Device | null>(null)
+  const [selectedDevice, setSelectedDevice] = useState<DeviceTypes | null>(null)
+
+  console.log(devices)
 
   // Submit Edit
   const handleEdit = async () => {
-    if (!selectedDevice) return
+    if (!selectedDevice) return; // Pastikan selectedDevice ada
+
+    // Membuat payload berdasarkan selectedDevice
+    const payload = {
+      device_name: selectedDevice.name,
+      power_watts: selectedDevice.power_watts,
+      device_type: selectedDevice.type, // Menyertakan type perangkat
+    };
+
     try {
-      const payload = {
-        device_name: selectedDevice.name,
-        power_watts: parseInt(selectedDevice.consumption),
-        device_type: "default",
-      }
-      await UpdateElectricityTracker(selectedDevice.id, payload)
-      onUpdate(selectedDevice)
-      setEditOpen(false)
-    } catch (e) {
-      console.error(e)
+      // Memanggil helper untuk update perangkat
+      const result = await UpdateElectricityDevice(selectedDevice.id, payload);
+
+      // Mengupdate perangkat di state
+      onUpdate(result.data);
+      setEditOpen(false);
+    } catch (error) {
+      console.error("Error updating device:", error);
     }
-  }
+  };
 
   // Submit Delete
   const handleDelete = async () => {
     if (!selectedDevice) return
     try {
-      await DeleteElectricityTracker(selectedDevice.id)
+      await DeleteElectricityDevice(selectedDevice.id)
       onDelete(selectedDevice.id)
       setDeleteOpen(false)
     } catch (e) {
@@ -69,22 +78,26 @@ export default function DeviceTable({ devices, onUpdate, onDelete }: DeviceTable
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[40px]" />
             <TableHead>Perangkat</TableHead>
             <TableHead>Tipe</TableHead>
             <TableHead>Konsumsi (kWh)</TableHead>
+            <TableHead>Status</TableHead>
             <TableHead className="w-[40px]" />
           </TableRow>
         </TableHeader>
         <TableBody>
           {devices.length > 0 ? devices.map((device) => (
             <TableRow key={device.id}>
-              <TableCell className="flex justify-center">
-                <Checkbox aria-label={`Select ${device.name}`} />
-              </TableCell>
-              <TableCell>{device.device_name}</TableCell>
-              <TableCell>{device.device_type}</TableCell>
+              <TableCell>{device.name}</TableCell>
+              <TableCell>{device.type}</TableCell>
               <TableCell>{device.power_watts}</TableCell>
+              <TableCell>
+                <Badge className={device.status === "Aktif" || device.status === "Rendah"
+                  ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                  : "bg-red-100 text-red-700 hover:bg-red-200"}>
+                  {device.status}
+                </Badge>
+              </TableCell>
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -125,31 +138,14 @@ export default function DeviceTable({ devices, onUpdate, onDelete }: DeviceTable
       </Table>
 
       {/* Modal Edit */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Device</DialogTitle>
-          </DialogHeader>
-          {selectedDevice && (
-            <div className="space-y-4">
-              <Input
-                value={selectedDevice.name}
-                onChange={(e) => setSelectedDevice({ ...selectedDevice, name: e.target.value })}
-                placeholder="Nama device"
-              />
-              <Input
-                value={selectedDevice.consumption}
-                onChange={(e) => setSelectedDevice({ ...selectedDevice, consumption: e.target.value })}
-                placeholder="Konsumsi (kWh)"
-              />
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditOpen(false)}>Batal</Button>
-            <Button onClick={handleEdit}>Simpan</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <EditDeviceModal
+        editOpen={editOpen}
+        setEditOpen={setEditOpen}
+        selectedDevice={selectedDevice}
+        setSelectedDevice={setSelectedDevice}
+        handleEdit={handleEdit}
+      />
+
 
       {/* Modal Delete */}
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
