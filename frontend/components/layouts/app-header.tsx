@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useAuthMe } from "@/helpers/AuthMe"
 import LogoutAction from "@/helpers/LogoutAction"
+import Link from "next/link"
 
 // ⬇️ import helper baru
 import { useNotifications, timeAgo } from "@/helpers/fetchNotifications"
@@ -137,12 +138,16 @@ export function AppHeader() {
               <DropdownMenuLabel>Akun Saya</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                <span>Profil</span>
+                <Link href="/profile">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profil</span>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Pengaturan</span>
+                <Link href="/order">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Order</span>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => logout()}>
