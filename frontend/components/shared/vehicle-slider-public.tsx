@@ -143,7 +143,7 @@ export default function VehicleSliderPublic() {
                 
           const res = await PostVehicleTrackerLog({
             vehicle_id: v.id,
-            distance_km: (distance ?? 0) / 1000, // convert ke KM
+            distance_km: parseFloat(((distance ?? 0) / 1000).toFixed(2)) ?? 0,
             start_lat: v.startLocation?.lat ?? 0,
             start_lon: v.startLocation?.lng ?? 0,
             end_lat: latitude,
