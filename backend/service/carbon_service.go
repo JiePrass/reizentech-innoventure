@@ -4,6 +4,7 @@ package service
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/Qodarrz/fiber-app/dto"
 	models "github.com/Qodarrz/fiber-app/model"
@@ -222,6 +223,8 @@ func (s *CarbonService) AddElectronicsLog(ctx context.Context, userID int64, req
         DeviceID:       device.ID,
         DurationHours:  req.DurationHours,
         CarbonEmission: carbon,
+		LoggedAt: time.Now(),
+
     })
     if err != nil {
         return err

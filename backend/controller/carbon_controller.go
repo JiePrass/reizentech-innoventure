@@ -22,16 +22,16 @@ func InitCarbonController(app *fiber.App, svc service.CarbonServiceInterface, mw
 	public := app.Group("/api/carbon", mw.JWT)
 	
 	public.Post("/vehicle", ctrl.CreateVehicle)
-	public.Get("/vehicles", ctrl.ListUserVehicles)
-	public.Post("/vehicle", ctrl.EditVehicle)
+	public.Get("/vehicles", ctrl.ListUserVehicles)	
 	public.Delete("/vehicle/:id", ctrl.DeleteVehicle)
+	public.Patch("/vehicle/:id", ctrl.EditVehicle)
 	public.Post("/vehicle-log", ctrl.AddVehicleLog)
 	public.Get("/vehicle/:id/logs", ctrl.GetVehicleLogs)
 	public.Get("/vehicle/logs", ctrl.GetAllVehicleLogs)
 
 	public.Post("/electronic", ctrl.CreateElectronic)
 	public.Get("/electronics", ctrl.ListUserElectronics)
-	public.Put("/electronics/:id", ctrl.EditElectronic)
+	public.Patch("/electronics/:id", ctrl.EditElectronic)
 	public.Delete("/electronics/:id", ctrl.DeleteElectronic)
 	public.Post("/electronics-log", ctrl.AddElectronicsLog)
 	public.Get("/electronic/:id/logs", ctrl.GetElectronicsLogs)
@@ -199,7 +199,7 @@ func (c *CarbonController) DeleteVehicle(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(helpers.BasicResponse(false, err.Error()))
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(helpers.BasicResponse(true, "vehicle deleted successfully"))
+	return ctx.Status(fiber.StatusOK).JSON(helpers.BasicResponse(true, "vehicle deleted successfully"))	
 }
 
 func (c *CarbonController) EditElectronic(ctx *fiber.Ctx) error {

@@ -29,11 +29,13 @@ func InitStoreController(app *fiber.App, svc service.StoreServiceInterface, mw *
 	private.Post("/items", ctrl.CreateStoreItem)
 	private.Put("/items/:id", ctrl.UpdateStoreItem)
 	private.Delete("/items/:id", ctrl.DeleteStoreItem)
-	private.Post("/orders", ctrl.CreateOrder)
+	private.Post("/orders/:item_id", ctrl.CreateOrder)
 	private.Get("/orders", ctrl.GetUserOrders)
 	private.Get("/orders/:id", ctrl.GetOrderByID)
 	private.Post("/orders/:id/cancel", ctrl.CancelOrder)
+	// private.Post("/orders/item/:item_id", ctrl.CreateOrderByItemID)
 }
+
 
 func (c *StoreController) GetAllStoreItems(ctx *fiber.Ctx) error {
 	status := ctx.Query("status", "")
@@ -159,34 +161,51 @@ func (c *StoreController) DeleteStoreItem(ctx *fiber.Ctx) error {
 func (c *StoreController) CreateOrder(ctx *fiber.Ctx) error {
 	claims := helpers.GetUserClaims(ctx)
 	if claims == nil {
-		return ctx.Status(http.StatusUnauthorized).JSON(helpers.BasicResponse(false, "invalid token"))
+		return ctx.Status(http.StatusUnauthorized).JSON(
+			helpers.BasicResponse(false, "invalid token"),
+		)
 	}
 
 	userID, err := strconv.ParseInt(claims.UserID, 10, 64)
 	if err != nil {
-		return ctx.Status(http.StatusBadRequest).JSON(helpers.BasicResponse(false, "invalid user ID"))
+		return ctx.Status(http.StatusBadRequest).JSON(
+			helpers.BasicResponse(false, "invalid user ID"),
+		)
 	}
 
-	req := new(dto.CreateOrderDTO)
-	if err := helpers.BindAndValidate(ctx, req); err != nil {
-		if vErr, ok := err.(*helpers.ValidationError); ok {
-			return ctx.Status(http.StatusBadRequest).JSON(helpers.ErrorResponseRequest(false, vErr.Message, vErr.Errors))
-		}
-		return ctx.Status(http.StatusBadRequest).JSON(helpers.BasicResponse(false, err.Error()))
+	itemID, err := strconv.ParseInt(ctx.Params("item_id"), 10, 64)
+	if err != nil {
+		return ctx.Status(http.StatusBadRequest).JSON(
+			helpers.BasicResponse(false, "invalid item_id"),
+		)
 	}
 
-	orderResponse, err := c.storeService.CreateOrder(ctx.Context(), userID, req)
+	qty, err := strconv.Atoi(ctx.Query("qty", "1"))
+	if err != nil || qty <= 0 {
+		qty = 1
+	}
+
+	// ✅ gunakan CreateOrderByItemID
+	orderResponse, err := c.storeService.CreateOrderByItemID(ctx.Context(), userID, itemID, qty)
 	if err != nil {
 		switch err.Error() {
 		case "insufficient points", "item not found", "insufficient stock", "item is not available":
-			return ctx.Status(http.StatusBadRequest).JSON(helpers.BasicResponse(false, err.Error()))
+			return ctx.Status(http.StatusBadRequest).JSON(
+				helpers.BasicResponse(false, err.Error()),
+			)
 		default:
-			return ctx.Status(http.StatusInternalServerError).JSON(helpers.BasicResponse(false, err.Error()))
+			return ctx.Status(http.StatusInternalServerError).JSON(
+				helpers.BasicResponse(false, err.Error()),
+			)
 		}
 	}
 
-	return ctx.Status(http.StatusCreated).JSON(helpers.SuccessResponseWithData(true, "order created successfully", orderResponse))
+	return ctx.Status(http.StatusCreated).JSON(
+		helpers.SuccessResponseWithData(true, "order created successfully", orderResponse),
+	)
 }
+
+
 
 func (c *StoreController) GetOrderByID(ctx *fiber.Ctx) error {
 	claims := helpers.GetUserClaims(ctx)

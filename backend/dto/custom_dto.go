@@ -17,6 +17,8 @@ type UserCustomDataResponseDTO struct {
 	Orders        []CustomOrderDTO        `json:"orders,omitempty"`
 }
 
+
+
 type UserDetailResponseDTO struct {
 	ID          int64      `json:"id"`
 	Username    string     `json:"username"`

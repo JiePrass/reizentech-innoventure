@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -21,13 +22,13 @@ func InitAuthController(app *fiber.App, svc service.AuthServiceInterface, mw *mi
 	public := app.Group("/api/auth")
 	public.Post("/register", ctrl.Register)
 	public.Post("/login", ctrl.Login)
-	public.Post("/verify-email", ctrl.VerifyEmail)
 	public.Get("/verify-email", ctrl.VerifyEmail)
+	public.Post("/verify-email", ctrl.VerifyEmail)
 	public.Post("/reset-password/request", ctrl.RequestResetPassword)
 	public.Post("/reset-password", ctrl.ResetPassword)
 
-	private := app.Group("/api/auth", mw.JWT)
-	// private := app.Group("/api/auth", mw.JWT, middleware.VerifyEmailMiddleware(mw.DB))
+	// private := app.Group("/api/auth", mw.JWT)
+	private := app.Group("/api/auth", mw.JWT, middleware.VerifyEmailMiddleware(mw.DB))
 	private.Get("/me", ctrl.Profile)
 	private.Post("/update-password", ctrl.UpdatePassword)
 }
@@ -99,23 +100,53 @@ func (c *AuthController) Profile(ctx *fiber.Ctx) error {
 }
 
 func (c *AuthController) VerifyEmail(ctx *fiber.Ctx) error {
-	token := ctx.Query("token")
-	if token == "" {
-		return ctx.Status(http.StatusBadRequest).JSON(helpers.ErrorResponseRequest(false, "Bad Request", map[string]string{
-			"token": "token wajib diisi",
-		}))
-	}
+	fmt.Println("FULL URL:", ctx.OriginalURL())
+    fmt.Println("QUERY token:", ctx.Query("token"))
 
-	userID, err := helpers.DecodeJWT(token)
-	if err != nil {
-		return ctx.Status(http.StatusBadRequest).JSON(helpers.BasicResponse(false, err.Error()))
-	}
+    token := ctx.Query("token")
+    if token == "" {
+        return ctx.Status(http.StatusBadRequest).JSON(
+            helpers.ErrorResponseRequest(false, "Bad Request", map[string]string{
+                "token": "token wajib diisi",
+            }),
+        )
+    }
+    if token == "" {
+        var body struct {
+            Token string `json:"token"`
+        }
+        if err := ctx.BodyParser(&body); err != nil {
+            return ctx.Status(http.StatusBadRequest).JSON(
+                helpers.BasicResponse(false, "token wajib diisi"),
+            )
+        }
+        token = body.Token
+    }
 
-	if err := c.authService.VerifyEmail(ctx.Context(), userID); err != nil {
-		return ctx.Status(http.StatusBadRequest).JSON(helpers.BasicResponse(false, err.Error()))
-	}
+    if token == "" {
+        return ctx.Status(http.StatusBadRequest).JSON(
+            helpers.ErrorResponseRequest(false, "Bad Request", map[string]string{
+                "token": "token wajib diisi",
+            }),
+        )
+    }
 
-	return ctx.Status(http.StatusOK).JSON(helpers.SuccessResponseWithData(true, "email berhasil diverifikasi", nil))
+    userID, err := helpers.DecodeJWT(token)
+    if err != nil {
+        return ctx.Status(http.StatusBadRequest).JSON(
+            helpers.BasicResponse(false, err.Error()),
+        )
+    }
+
+    if err := c.authService.VerifyEmail(ctx.Context(), userID); err != nil {
+        return ctx.Status(http.StatusBadRequest).JSON(
+            helpers.BasicResponse(false, err.Error()),
+        )
+    }
+
+    return ctx.Status(http.StatusOK).JSON(
+        helpers.SuccessResponseWithData(true, "email berhasil diverifikasi", nil),
+    )
 }
 
 func (c *AuthController) RequestResetPassword(ctx *fiber.Ctx) error {

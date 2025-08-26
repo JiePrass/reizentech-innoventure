@@ -12,7 +12,7 @@ func SendEmailVerification(toEmail string, verificationToken string) error {
 	smtpHost := os.Getenv("SMTP_HOST")
 	smtpPort := os.Getenv("SMTP_PORT")
 	baseURL := os.Getenv("APP_BASE_URL")
-
+    
 	verifyURL := fmt.Sprintf("%s/api/auth/verify-email?token=%s", baseURL, verificationToken)
 
 	subject := "Verifikasi Email Anda"

@@ -115,19 +115,14 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginDTO) (*models.Use
 		return nil, "", err
 	}
 
-	// Simpan activity log
 	msg := fmt.Sprintf("User %d login berhasil", user.ID)
 	if err := s.activityRepo.LogActivity(ctx, user.ID, msg); err != nil {
 		fmt.Printf("gagal simpan activity log: %v\n", err)
 	}
 
-	// CHECK MISSION SETELAH LOGIN - INI YANG DIMAU
-	// Panggil repository mission check untuk mengecek mission yang berhubungan dengan login
 	go func() {
-		// Gunakan context background untuk goroutine
 		bgCtx := context.Background()
 		
-		// Check semua mission aktif untuk user ini
 		if err := s.missionRepo.CheckAllUserMissions(bgCtx, user.ID); err != nil {
 			fmt.Printf("Gagal check missions setelah login: %v\n", err)
 		} else {
@@ -137,7 +132,6 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginDTO) (*models.Use
 
 	return user, token, nil
 }
-// Get profile
 func (s *AuthService) GetProfile(ctx context.Context, userID int64) (*models.User, error) {
     user, err := s.userRepo.FindByID(ctx, userID)
     if err != nil {
@@ -150,12 +144,10 @@ func (s *AuthService) GetProfile(ctx context.Context, userID int64) (*models.Use
 }
 
 
-// Verify email
 func (s *AuthService) VerifyEmail(ctx context.Context, userID int64) error {
 	return s.userRepo.VerifyEmailByToken(ctx, userID)
 }
 
-// Request reset password
 func (s *AuthService) RequestResetPassword(ctx context.Context, email string) error {
 	user, err := s.userRepo.FindByEmail(ctx, email)
 	if err != nil || user == nil {
@@ -168,10 +160,9 @@ func (s *AuthService) RequestResetPassword(ctx context.Context, email string) er
 		return fmt.Errorf("gagal menyimpan token reset password: %w", err)
 	}
 
-	return helpers.SendTokenForgotEmail(email, token) // pakai helper email
+	return helpers.SendTokenForgotEmail(email, token)
 }
 
-// Reset password
 func (s *AuthService) ResetPassword(ctx context.Context, token, newPassword string) error {
 	user, err := s.userRepo.FindByResetPasswordToken(ctx, token)
 	if err != nil || user == nil {

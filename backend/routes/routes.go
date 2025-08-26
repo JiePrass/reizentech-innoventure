@@ -35,27 +35,32 @@ func Setup(app *fiber.App, db *sql.DB, mw *middleware.Middlewares) {
 	storeRepo := repository.NewStoreRepository(db)
 	pointsRepo := repository.NewPointsRepository(db)
 	activityRepo := repository.NewActivityRepository(db)
+	notificationRepo := repository.NewNotificationRepo(db)
 
 	storeService := service.NewStoreService(
 		storeRepo,
 		pointsRepo,
 		activityRepo,
+		notificationRepo,
 	)
 
 	userCustomService := service.NewUserCustomEndpointService(
 		repository.NewUserCustomEndpointRepo(db),
+		repository.CheckMissionRepository(db),
+		repository.NewMissionRepository(db),
 	)
 
 	profileService := service.NewUserProfileService(
 		repository.NewUserProfileRepository(db),
 		repository.NewActivityRepository(db),
+		repository.NewUserRepository(db),
+		
 	)
 
 	chatbotService, err := service.NewGeminiService()
 	if err != nil {
 		println("⚠️ Gagal init GeminiService:", err.Error())
 
-		// fallback route tetap ada
 		api := app.Group("/api/gemini")
 		api.Post("/generate", func(c *fiber.Ctx) error {
 			return c.Status(500).JSON(fiber.Map{
@@ -66,11 +71,15 @@ func Setup(app *fiber.App, db *sql.DB, mw *middleware.Middlewares) {
 		controller.InitGeminiController(app, chatbotService, mw)
 	}
 
+	badgeService := service.NewBadgeService(repository.NewBadgeRepository(db))
+	notifCustomService := service.NewNotificationService(repository.NewNotificationRepo(db))
+
 	controller.InitAuthController(app, authService, mw)
 	controller.InitCarbonController(app, carbonService, mw)
 	controller.InitMissionController(app, userMissionService, mw)
 	controller.InitStoreController(app, storeService, mw)
+	controller.InitBadgeController(app, badgeService, mw)
 	controller.InitUserProfileController(app, profileService, mw)
-	controller.InitUserCustomEndpointController(app, userCustomService, mw)
+	controller.InitUserCustomEndpointController(app, userCustomService, notifCustomService, mw)
 
 }

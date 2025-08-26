@@ -10,6 +10,7 @@ import "time"
 		Role      string    `db:"role"`
 		GoogleID  *int64    `db:"google_id"`
 		CreatedAt time.Time `db:"created_at"`
+		EmailVerifiedAt *time.Time `db:"email_verified_at"`
 
 		Profile *UserProfile `json:"profile,omitempty"`
 	}

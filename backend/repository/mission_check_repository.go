@@ -194,7 +194,7 @@ func (r *checkMissionRepository) FindMissionsByCriteriaType(ctx context.Context,
 func (r *checkMissionRepository) AssignMissionToUser(ctx context.Context, userID, missionID int64) error {
 	query := `
 		INSERT INTO user_missions(user_id, mission_id, created_at) 
-		VALUES ($1, $2, $3)
+		VALUES ($1, $2, $3)	
 		ON CONFLICT (user_id, mission_id) 
 		DO UPDATE SET created_at = EXCLUDED.created_at
 	`
@@ -264,7 +264,7 @@ func (r *checkMissionRepository) calculateLoginStreakProgress(ctx context.Contex
 	var streak float64
 	query := `
 		SELECT COUNT(DISTINCT DATE(created_at)) 
-		FROM activity_logs 
+		FROM activity_logs
 		WHERE user_id = $1 AND activity LIKE '%login%'
 		AND created_at >= NOW() - INTERVAL '30 days'
 	`

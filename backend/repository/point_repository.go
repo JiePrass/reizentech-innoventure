@@ -47,14 +47,27 @@ func (r *pointsRepository) createUserPoints(ctx context.Context, userID int64) (
 		TotalPoints: 0,
 		CreatedAt:   time.Now(),
 	}
-	
-	query := `INSERT INTO points (user_id, total_points, created_at) VALUES ($1, $2, $3) RETURNING id`
+
+	// Gunakan ON CONFLICT DO NOTHING agar kalau sudah ada, tidak insert lagi
+	query := `
+		INSERT INTO points (user_id, total_points, created_at) 
+		VALUES ($1, $2, $3)
+		ON CONFLICT (user_id) DO NOTHING
+		RETURNING id
+	`
+
 	err := r.db.QueryRowContext(ctx, query, userID, points.TotalPoints, points.CreatedAt).Scan(&points.ID)
 	if err != nil {
+		// Kalau DO NOTHING maka RETURNING tidak jalan → harus ambil existing row
+		if errors.Is(err, sql.ErrNoRows) {
+			return r.GetUserPoints(ctx, userID)
+		}
 		return nil, err
 	}
+
 	return points, nil
 }
+
 
 func (r *pointsRepository) AddPoints(ctx context.Context, userID int64, amount int, source string, referenceID int64) error {
 	// Start transaction

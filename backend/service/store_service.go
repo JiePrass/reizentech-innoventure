@@ -21,27 +21,31 @@ type StoreServiceInterface interface {
 	DeleteStoreItem(ctx context.Context, id int64) error
 
 	// Orders
-	CreateOrder(ctx context.Context, userID int64, req *dto.CreateOrderDTO) (*dto.OrderResponseDTO, error)
+	CreateOrder(ctx context.Context, userID int64, qty int64, req *dto.CreateOrderDTO) (*dto.OrderResponseDTO, error)
 	GetOrderByID(ctx context.Context, orderID int64) (*dto.OrderDTO, error)
 	GetUserOrders(ctx context.Context, userID int64) ([]dto.OrderDTO, error)
 	CancelOrder(ctx context.Context, userID, orderID int64) error
+	CreateOrderByItemID(ctx context.Context, userID, itemID int64, qty int) (*dto.OrderResponseDTO, error)
 }
 
 type storeService struct {
-	storeRepo     repository.StoreRepositoryInterface
-	pointsRepo    repository.PointsRepositoryInterface
-	activityRepo  repository.ActivityRepositoryInterface
+	storeRepo    repository.StoreRepositoryInterface
+	pointsRepo   repository.PointsRepositoryInterface
+	activityRepo repository.ActivityRepositoryInterface
+	notificationRepo repository.NotificationRepository
 }
 
 func NewStoreService(
 	storeRepo repository.StoreRepositoryInterface,
 	pointsRepo repository.PointsRepositoryInterface,
 	activityRepo repository.ActivityRepositoryInterface,
+	notificationRepo repository.NotificationRepository,
 ) StoreServiceInterface {
 	return &storeService{
 		storeRepo:    storeRepo,
 		pointsRepo:   pointsRepo,
 		activityRepo: activityRepo,
+		notificationRepo: notificationRepo,
 	}
 }
 
@@ -172,8 +176,7 @@ func (s *storeService) DeleteStoreItem(ctx context.Context, id int64) error {
 	return s.storeRepo.UpdateStoreItem(ctx, item)
 }
 
-func (s *storeService) CreateOrder(ctx context.Context, userID int64, req *dto.CreateOrderDTO) (*dto.OrderResponseDTO, error) {
-	// Validasi items dan hitung total points
+func (s *storeService) CreateOrder(ctx context.Context, userID int64, qty int64, req *dto.CreateOrderDTO) (*dto.OrderResponseDTO, error) {
 	var totalPoints int
 	var orderItems []model.OrderItem
 	var storeItems []*model.StoreItem
@@ -432,4 +435,131 @@ func (s *storeService) CancelOrder(ctx context.Context, userID, orderID int64) e
 
 	// Commit transaction
 	return tx.Commit()
+}
+
+func (s *storeService) CreateOrderByItemID(ctx context.Context, userID, itemID int64, qty int) (*dto.OrderResponseDTO, error) {
+	if qty <= 0 {
+		qty = 1
+	}
+
+	// Ambil data item
+	storeItem, err := s.storeRepo.GetStoreItemByID(ctx, itemID)
+	if err != nil {
+		return nil, err
+	}
+	if storeItem == nil {
+		return nil, errors.New("item not found")
+	}
+	if storeItem.Status != "active" {
+		return nil, errors.New("item is not available")
+	}
+	if storeItem.Stock < qty {
+		return nil, errors.New("insufficient stock")
+	}
+
+	// Hitung total points
+	totalPoints := storeItem.PricePoints * qty
+
+	// Cek poin user
+	userPoints, err := s.pointsRepo.GetUserPoints(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if userPoints.TotalPoints < totalPoints {
+		return nil, errors.New("insufficient points")
+	}
+
+	// Start transaction
+	tx, err := s.storeRepo.BeginTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// Create order
+	order := &model.Order{
+		UserID:      userID,
+		TotalPoints: totalPoints,
+		Status:      "pending",
+		CreatedAt:   time.Now(),
+	}
+	if err := s.storeRepo.CreateOrder(ctx, order); err != nil {
+		return nil, err
+	}
+
+	// Create order item
+	orderItem := model.OrderItem{
+		ItemID:          storeItem.ID,
+		Qty:             qty,
+		PriceEachPoints: storeItem.PricePoints,
+		CreatedAt:       time.Now(),
+	}
+	if err := s.storeRepo.CreateOrderItems(ctx, order.ID, []model.OrderItem{orderItem}); err != nil {
+		return nil, err
+	}
+
+	// Potong poin
+	if err := s.pointsRepo.DeductPoints(ctx, userID, totalPoints, "store_purchase", order.ID); err != nil {
+		return nil, err
+	}
+
+	// Kurangi stock
+	if err := s.storeRepo.DecrementStoreItemStock(ctx, storeItem.ID, qty); err != nil {
+		return nil, err
+	}
+
+	// Update order status jadi completed
+	if err := s.storeRepo.UpdateOrderStatus(ctx, order.ID, "completed"); err != nil {
+		return nil, err
+	}
+	order.Status = "completed"
+
+	// Log aktivitas
+	activityMsg := fmt.Sprintf("User %d purchased %s (x%d) for %d points", userID, storeItem.Name, qty, totalPoints)
+	_ = s.activityRepo.LogActivity(ctx, userID, activityMsg)
+
+	// Commit
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	// Setelah order berhasil dan commit tx
+	notif := &model.Notification{
+		UserID:    userID,
+		Title:     "Order Successful",
+		Message:   fmt.Sprintf("Your order for %s (x%d) has been completed. Total points spent: %d.", storeItem.Name, qty, totalPoints),
+		CreatedAt: time.Now(),
+	}
+	_ = s.notificationRepo.Create(ctx, notif)
+
+	// Sisa poin user
+	remainingPoints, err := s.pointsRepo.GetUserPoints(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Response DTO
+	itemResp := dto.OrderItemResponseDTO{
+		ItemID:          storeItem.ID,
+		Qty:             qty,
+		PriceEachPoints: storeItem.PricePoints,
+		TotalPoints:     totalPoints,
+	}
+	orderDTO := dto.OrderDTO{
+		ID:          order.ID,
+		UserID:      userID,
+		TotalPoints: totalPoints,
+		Status:      order.Status,
+		Items:       []dto.OrderItemResponseDTO{itemResp},
+		CreatedAt:   order.CreatedAt,
+	}
+
+	return &dto.OrderResponseDTO{
+		Order:           orderDTO,
+		RemainingPoints: remainingPoints.TotalPoints,
+	}, nil
 }

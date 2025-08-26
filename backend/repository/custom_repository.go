@@ -21,14 +21,15 @@ func NewUserCustomEndpointRepo(db *sql.DB) UserCustomEndpointRepoInterface {
 
 // Struct untuk data custom user
 type UserCustomData struct {
-	User             UserDetail
-	Vehicles         []VehicleWithCarbon
-	Electronics      []ElectronicWithCarbon
-	Missions         []MissionProgress
-	Badges           []UserBadge
+	User              UserDetail
+	Vehicles          []VehicleWithCarbon
+	Electronics       []ElectronicWithCarbon
+	Missions          []MissionProgress
+	Badges            []UserBadge
 	PointTransactions []PointTransaction
-	ActivityLogs     []ActivityLog
-	Orders           []Order
+	ActivityLogs      []ActivityLog
+	Orders            []Order
+	UserPoints        UserPoints
 }
 
 type UserDetail struct {
@@ -40,7 +41,7 @@ type UserDetail struct {
 	AvatarURL   string     `json:"avatar_url"`
 	Birthdate   *time.Time `json:"birthdate"`
 	Gender      string     `json:"gender"`
-	TotalPoints int        `json:"total_points"`
+	TotalPoints int      `json:"total_points"`
 	CreatedAt   time.Time  `json:"created_at"`
 }
 
@@ -65,15 +66,15 @@ type ElectronicWithCarbon struct {
 }
 
 type MissionProgress struct {
-	ID           int64      `json:"id"`
-	Title        string     `json:"title"`
-	Description  string     `json:"description"`
-	MissionType  string     `json:"mission_type"`
-	PointsReward int        `json:"points_reward"`
-	TargetValue  float64    `json:"target_value"`
-	ProgressValue float64   `json:"progress_value"`
-	CompletedAt  *time.Time `json:"completed_at"`
-	CreatedAt    time.Time  `json:"created_at"`
+	ID            int64      `json:"id"`
+	Title         string     `json:"title"`
+	Description   string     `json:"description"`
+	MissionType   string     `json:"mission_type"`
+	PointsReward  int        `json:"points_reward"`
+	TargetValue   float64    `json:"target_value"`
+	ProgressValue float64    `json:"progress_value"`
+	CompletedAt   *time.Time `json:"completed_at"`
+	CreatedAt     time.Time  `json:"created_at"`
 }
 
 type UserBadge struct {
@@ -103,10 +104,10 @@ type ActivityLog struct {
 }
 
 type Order struct {
-	ID          int64      `json:"id"`
-	TotalPoints int        `json:"total_points"`
-	Status      string     `json:"status"`
-	CreatedAt   time.Time  `json:"created_at"`
+	ID          int64       `json:"id"`
+	TotalPoints int         `json:"total_points"`
+	Status      string      `json:"status"`
+	CreatedAt   time.Time   `json:"created_at"`
 	Items       []OrderItem `json:"items"`
 }
 
@@ -132,30 +133,53 @@ type UserSimple struct {
 	AvatarURL string `json:"avatar_url"`
 }
 
+type UserPoints struct {
+    TotalPoints int `json:"total_points"`
+}
+
 func (r *userCustomEndpointRepo) GetUserCustomData(ctx context.Context, userID int64) (*UserCustomData, error) {
 	data := &UserCustomData{}
-	
-	userQuery := `
-		SELECT u.id, u.username, u.email, u.role, u.created_at, 
-       COALESCE(up.full_name, '')   AS full_name,
-       COALESCE(up.avatar_url, '')  AS avatar_url,
-       up.birthdate,
-       COALESCE(up.gender, '')      AS gender,
-       COALESCE(p.total_points, 0)  AS total_points
-FROM users u
-LEFT JOIN user_profiles up ON u.id = up.user_id
-LEFT JOIN points p ON u.id = p.user_id
-WHERE u.id = $1
 
+	// Query user dan profile
+	userQuery := `
+	SELECT u.id, u.username, u.email, u.role, u.created_at, 
+	       COALESCE(up.full_name, '')   AS full_name,
+	       COALESCE(up.avatar_url, '')  AS avatar_url,
+	       up.birthdate,
+	       COALESCE(up.gender, '')      AS gender
+	FROM users u
+	LEFT JOIN user_profiles up ON u.id = up.user_id
+	WHERE u.id = $1
 	`
+	var role sql.NullString
 	err := r.db.QueryRowContext(ctx, userQuery, userID).Scan(
-		&data.User.ID, &data.User.Username, &data.User.Email, &data.User.Role, &data.User.CreatedAt,
-		&data.User.FullName, &data.User.AvatarURL, &data.User.Birthdate, &data.User.Gender,
-		&data.User.TotalPoints,
+		&data.User.ID,
+		&data.User.Username,
+		&data.User.Email,
+		&role,
+		&data.User.CreatedAt,
+		&data.User.FullName,
+		&data.User.AvatarURL,
+		&data.User.Birthdate,
+		&data.User.Gender,
 	)
 	if err != nil {
 		return nil, err
 	}
+	if role.Valid {
+		data.User.Role = role.String
+	}
+
+	// Query total points terpisah
+	pointsQuery := `
+	SELECT COALESCE(total_points, 10) 
+	FROM points 
+	WHERE user_id = $1
+	`
+	err = r.db.QueryRowContext(ctx, pointsQuery, userID).Scan(&data.UserPoints.TotalPoints)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}	
 
 	// Query untuk vehicles
 	vehicleQuery := `
@@ -194,12 +218,22 @@ WHERE u.id = $1
 
 	// Query untuk missions
 	missionQuery := `
-		SELECT m.id, m.title, m.description, m.mission_type, m.points_reward, m.target_value,
-		       ump.progress_value, um.completed_at, m.created_at
-		FROM missions m
-		LEFT JOIN user_mission_progress ump ON m.id = ump.mission_id AND ump.user_id = $1
-		LEFT JOIN user_missions um ON m.id = um.mission_id AND um.user_id = $1
-		WHERE m.expired_at IS NULL OR m.expired_at > NOW()
+		SELECT m.id, 
+       m.title, 
+       m.description, 
+       m.mission_type, 
+       m.points_reward, 
+       m.target_value,
+       ump.progress_value, 
+       um.completed_at, 
+       m.created_at
+FROM missions m
+LEFT JOIN user_mission_progress ump 
+       ON m.id = ump.mission_id AND ump.user_id = $1
+INNER JOIN user_missions um 
+       ON m.id = um.mission_id AND um.user_id = $1
+WHERE um.completed_at IS NOT NULL
+  AND (m.expired_at IS NULL OR m.expired_at > NOW());
 	`
 	rows, _ = r.db.QueryContext(ctx, missionQuery, userID)
 	for rows.Next() {
@@ -314,7 +348,7 @@ func (r *userCustomEndpointRepo) GetLeaderboard(ctx context.Context, page, limit
        COALESCE(up.avatar_url, '') as avatar_url,
        COALESCE(p.total_points, 0) as total_points,
        COUNT(DISTINCT um.mission_id) as completed_missions,
-       COALESCE(p.total_points, 0) * COUNT(DISTINCT um.mission_id) as score,
+       (COALESCE(p.total_points, 0) * 0.7 + COUNT(DISTINCT um.mission_id) * 0.3) as score,
        COALESCE((
            SELECT SUM(carbon_emission_g) 
            FROM (
@@ -334,6 +368,7 @@ LEFT JOIN user_missions um ON u.id = um.user_id AND um.completed_at IS NOT NULL 
 GROUP BY u.id, u.username, up.full_name, up.avatar_url, p.total_points
 ORDER BY score DESC, total_points DESC, completed_missions DESC
 LIMIT $1 OFFSET $2
+
 
 	`
 

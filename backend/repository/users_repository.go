@@ -5,6 +5,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"log"
 	"time"
 
 	model "github.com/Qodarrz/fiber-app/model"
@@ -53,22 +55,67 @@ func (r *userProfileRepository) FindByUserID(ctx context.Context, userID int64) 
 	return profile, nil
 }
 
+func strOrNil(s *string) interface{} {
+	if s == nil {
+		return nil
+	}
+	return *s
+}
+
+func timeOrNil(t *time.Time) interface{} {
+	if t == nil {
+		return nil
+	}
+	return *t
+}
 func (r *userProfileRepository) Update(ctx context.Context, profile *model.UserProfile) error {
+	if profile == nil {
+		return errors.New("profile is nil")
+	}
+
+	log.Printf("Repository Update called with profile: %+v", profile)
+
 	query := `
-		UPDATE user_profiles 
-		SET full_name = $1, avatar_url = $2, birthdate = $3, gender = $4 
-		WHERE user_id = $5
+	UPDATE user_profiles
+	SET
+		full_name = COALESCE($1, full_name),
+		avatar_url = COALESCE($2, avatar_url),
+		birthdate = COALESCE($3, birthdate),
+		gender = COALESCE($4, gender)
+	WHERE user_id = $5
+	RETURNING id, created_at
 	`
 
-	_, err := r.db.ExecContext(ctx, query,
-		profile.FullName,
-		profile.AvatarURL,
-		profile.Birthdate,
-		profile.Gender,
-		profile.UserID,
-	)
+	// Helper functions untuk handle nil pointers
+	strOrNil := func(s *string) interface{} {
+		if s == nil {
+			return nil
+		}
+		return *s
+	}
 
-	return err
+	timeOrNil := func(t *time.Time) interface{} {
+		if t == nil {
+			return nil
+		}
+		return *t
+	}
+
+	err := r.db.QueryRowContext(ctx, query,
+		strOrNil(profile.FullName),
+		strOrNil(profile.AvatarURL),
+		timeOrNil(profile.Birthdate),
+		strOrNil(profile.Gender),
+		profile.UserID,
+	).Scan(&profile.ID, &profile.CreatedAt)
+
+	if err != nil {
+		log.Printf("Repository Update error: %v", err)
+		return fmt.Errorf("failed to update profile: %w", err)
+	}
+
+	log.Printf("Repository Update successful: ID=%d, CreatedAt=%v", profile.ID, profile.CreatedAt)
+	return nil
 }
 
 func (r *userProfileRepository) Create(ctx context.Context, profile *model.UserProfile) error {

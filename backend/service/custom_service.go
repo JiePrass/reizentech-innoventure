@@ -1,4 +1,3 @@
-// service/user_custom_endpoint_service.go
 package service
 
 import (
@@ -11,14 +10,26 @@ import (
 type UserCustomEndpointServiceInterface interface {
 	GetUserCustomData(ctx context.Context, userID int64) (*dto.UserCustomDataResponseDTO, error)
 	GetLeaderboard(ctx context.Context, req *dto.LeaderboardRequestDTO) (*dto.LeaderboardResponseDTO, error)
+	GetMissionProgress(ctx context.Context, userID, missionID int64) (float64, error)
+	GetAllMissionProgress(ctx context.Context, userID int64) ([]dto.MissionProgressResponse, error)
 }
 
 type userCustomEndpointService struct {
-	userCustomRepo repository.UserCustomEndpointRepoInterface
+	userCustomRepo     repository.UserCustomEndpointRepoInterface
+	checkMissionRepo   repository.CheckMissionRepositoryInterface
+	missionRepo        repository.MissionRepositoryInterface
 }
 
-func NewUserCustomEndpointService(userCustomRepo repository.UserCustomEndpointRepoInterface) UserCustomEndpointServiceInterface {
-	return &userCustomEndpointService{userCustomRepo: userCustomRepo}
+func NewUserCustomEndpointService(
+	userCustomRepo repository.UserCustomEndpointRepoInterface,
+	checkMissionRepo repository.CheckMissionRepositoryInterface,
+	missionRepo repository.MissionRepositoryInterface,
+) UserCustomEndpointServiceInterface {
+	return &userCustomEndpointService{
+		userCustomRepo:   userCustomRepo,
+		checkMissionRepo: checkMissionRepo,
+		missionRepo:      missionRepo,	
+	}
 }
 
 func (s *userCustomEndpointService) GetUserCustomData(ctx context.Context, userID int64) (*dto.UserCustomDataResponseDTO, error) {
@@ -60,6 +71,7 @@ func (s *userCustomEndpointService) GetLeaderboard(ctx context.Context, req *dto
 	return response, nil
 }
 
+
 func (s *userCustomEndpointService) mapToDTO(data *repository.UserCustomData) *dto.UserCustomDataResponseDTO {
 	response := &dto.UserCustomDataResponseDTO{
 		User: dto.UserDetailResponseDTO{
@@ -72,10 +84,10 @@ func (s *userCustomEndpointService) mapToDTO(data *repository.UserCustomData) *d
 			Birthdate: data.User.Birthdate,
 			Gender:    data.User.Gender,
 			CreatedAt: data.User.CreatedAt,
+			TotalPoints: data.UserPoints.TotalPoints,
 		},
 	}
 
-	// Map vehicles
 	for _, v := range data.Vehicles {
 		response.Vehicles = append(response.Vehicles, dto.CustomVehicleDTO{
 			ID:           v.ID,
@@ -196,4 +208,16 @@ func (s *userCustomEndpointService) mapLeaderboardToDTO(entries []repository.Lea
 	}
 
 	return leaderboard
+}
+
+func (s *userCustomEndpointService) GetMissionProgress(ctx context.Context, userID, missionID int64) (float64, error) {
+	progress, err := s.checkMissionRepo.GetMissionProgress(ctx, userID, missionID)
+	if err != nil {
+		return 0, err
+	}
+	return progress, nil
+}
+
+func (s *userCustomEndpointService) GetAllMissionProgress(ctx context.Context, userID int64) ([]dto.MissionProgressResponse, error) {
+	return s.missionRepo.GetAllMissionProgress(ctx, userID)
 }

@@ -4,6 +4,8 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log"
 
 	dto "github.com/Qodarrz/fiber-app/dto"
 	models "github.com/Qodarrz/fiber-app/model"
@@ -16,18 +18,20 @@ type UserProfileServiceInterface interface {
 }
 
 type UserProfileService struct {
-	userRepo         repository.UserRepositoryInterface
-	userProfileRepo  repository.UserProfileRepositoryInterface
-	activityRepo     repository.ActivityRepositoryInterface
+	userRepo        repository.UserRepositoryInterface
+	userProfileRepo repository.UserProfileRepositoryInterface
+	activityRepo    repository.ActivityRepositoryInterface
 }
 
 func NewUserProfileService(
 	userProfileRepo repository.UserProfileRepositoryInterface,
 	activityRepo repository.ActivityRepositoryInterface,
+	userRepo repository.UserRepositoryInterface,
 ) *UserProfileService {
 	return &UserProfileService{
 		userProfileRepo: userProfileRepo,
 		activityRepo:    activityRepo,
+		userRepo:       userRepo,
 	}
 }
 
@@ -37,7 +41,6 @@ func (s *UserProfileService) GetProfile(ctx context.Context, userID int64) (*dto
 		return nil, errors.New("user tidak ditemukan")
 	}
 
-	// Jika profile belum ada, buat profile kosong
 	if profile == nil {
 		profile = &models.UserProfile{
 			UserID: userID,
@@ -55,32 +58,40 @@ func (s *UserProfileService) GetProfile(ctx context.Context, userID int64) (*dto
 		Profile: dto.UserProfileResponseDTO{
 			ID:        profile.ID,
 			UserID:    profile.UserID,
-			FullName:  *profile.FullName,
-			AvatarURL: *profile.AvatarURL,
-			Birthdate: *profile.Birthdate,
-			Gender:    *profile.Gender,
+			FullName:  profile.FullName,
+			AvatarURL: profile.AvatarURL,
+			Birthdate: profile.Birthdate,
+			Gender:    profile.Gender,
 			CreatedAt: profile.CreatedAt,
 		},
 	}
 
 	return response, nil
+
 }
 
 func (s *UserProfileService) UpdateProfile(ctx context.Context, userID int64, req *dto.UserProfileUpdateDTO) (*dto.UserWithProfileResponseDTO, error) {
-	// Cek apakah user exists
-	user, _, err := s.userProfileRepo.FindByUID(ctx, userID)
-	if err != nil || user == nil {
-		return nil, errors.New("user tidak ditemukan")
+	log.Printf("UpdateProfile called with userID: %d, req: %+v", userID, req)
+
+	// Ambil user dari table users
+	user, err := s.userRepo.FindByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.New("user not found") // or use a custom error type
 	}
 
-	// Get existing profile atau buat baru jika belum ada
+	// Now safely access user fields
+	// Your existing code that uses user.Profile, etc.
+	// Ambil profile dari table user_profiles
 	profile, err := s.userProfileRepo.FindByUserID(ctx, userID)
 	if err != nil {
-		return nil, errors.New("gagal mengambil data profile")
+		return nil, fmt.Errorf("gagal mengambil data profile: %w", err)
 	}
 
+	// Jika profile belum ada, buat baru
 	if profile == nil {
-		// Buat profile baru jika belum ada
 		profile = &models.UserProfile{
 			UserID: userID,
 		}
@@ -89,33 +100,31 @@ func (s *UserProfileService) UpdateProfile(ctx context.Context, userID int64, re
 		}
 	}
 
-	// Update fields yang di-provide
+	// Update fields profile yang di-provide (hanya jika tidak nil)
 	if req.FullName != nil {
-		profile.FullName = req.FullName
+		profile.FullName = req.FullName // Dereference jika perlu
 	}
 	if req.AvatarURL != nil {
-		profile.AvatarURL = req.AvatarURL
+		profile.AvatarURL = req.AvatarURL // Dereference jika perlu
 	}
 	if req.Birthdate != nil {
-		profile.Birthdate = req.Birthdate
+		profile.Birthdate = req.Birthdate // Dereference jika perlu
 	}
-
 	if req.Gender != nil {
-		profile.Gender = req.Gender
+		profile.Gender = req.Gender // Dereference jika perlu
 	}
 
-	// Update profile
+	// Update profile di repo
 	if err := s.userProfileRepo.Update(ctx, profile); err != nil {
 		return nil, errors.New("gagal mengupdate profile")
 	}
 
 	// Log activity
-	activityMsg := "User update profile"
-	if err := s.activityRepo.LogActivity(ctx, userID, activityMsg); err != nil {
-		// Tidak return error, hanya log
+	if s.activityRepo != nil {
+		s.activityRepo.LogActivity(ctx, userID, "User update profile")
 	}
 
-	// Return updated profile
+	// Build response
 	response := &dto.UserWithProfileResponseDTO{
 		ID:       user.ID,
 		Username: user.Username,
@@ -124,10 +133,10 @@ func (s *UserProfileService) UpdateProfile(ctx context.Context, userID int64, re
 		Profile: dto.UserProfileResponseDTO{
 			ID:        profile.ID,
 			UserID:    profile.UserID,
-			FullName:  *profile.FullName,
-			AvatarURL: *profile.AvatarURL,
-			Birthdate: *profile.Birthdate,
-			Gender:    *profile.Gender,
+			FullName:  profile.FullName,
+			AvatarURL: profile.AvatarURL,
+			Birthdate: profile.Birthdate,
+			Gender:    profile.Gender,
 			CreatedAt: profile.CreatedAt,
 		},
 	}

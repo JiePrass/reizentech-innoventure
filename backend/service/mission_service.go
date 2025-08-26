@@ -38,7 +38,7 @@ func NewMissionService(
 		missionRepo:     missionRepo,
 		userMissionRepo: userMissionRepo,
 		badgeRepo:       badgeRepo,
-	}
+	}		
 }
 
 func (s *missionService) CreateMissionWithBadge(ctx context.Context, req *dto.CreateMissionWithBadgeDTO) (*dto.MissionWithBadgeResponseDTO, error) {
@@ -116,7 +116,6 @@ func (s *missionService) badgeToDTO(badge *model.Badge) *dto.BadgeResponseDTO {
 		Name:           badge.Name,
 		ImageURL:       badge.ImageURL,
 		Description:    badge.Description,
-		RequiredPoints: badge.RequiredPoints,
 		CreatedAt:      badge.CreatedAt,
 	}
 }
