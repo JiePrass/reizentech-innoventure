@@ -1,71 +1,58 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { Badge } from "@/components/ui/badge"
-import Image from "next/image"
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
+import { GetMissions } from "@/helpers/GetMissions";
 
 interface Mission {
-    mission_id: number
-    title: string
-    description: string
-    target_value: number
-    progress: number
-    is_completed: boolean
-    points_reward: number
+    mission_id: number;
+    title: string;
+    description: string;
+    target_value: number;
+    progress: number;
+    is_completed: boolean;
+    points_reward: number;
 }
 
 export default function MissionPage() {
-    const [missions, setMissions] = useState<Mission[]>([])
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
+    const [missions, setMissions] = useState<Mission[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        const fetchMissions = async () => {
+        const fetchMissionsData = async () => {
             try {
-                const token = localStorage.getItem("authtoken")
+                const token = localStorage.getItem("authtoken");
                 if (!token) {
-                    setError("Token tidak ditemukan. Silakan login ulang.")
-                    setLoading(false)
-                    return
+                    setError("Token tidak ditemukan. Silakan login ulang.");
+                    setLoading(false);
+                    return;
                 }
 
-                const res = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL}/api/custom/mission-progress`,
-                    {
-                        headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
-                )
-
-                if (!res.ok) {
-                    throw new Error(`HTTP error! status: ${res.status}`)
-                }
-
-                const json = await res.json()
+                const json = await GetMissions(token); // Use the helper function here
                 if (json.status) {
-                    setMissions(json.data)
+                    setMissions(json.data);
                 } else {
-                    setError(json.message || "Gagal mengambil data")
+                    setError(json.message || "Gagal mengambil data");
                 }
             } catch (error: unknown) {
                 if (error instanceof Error) {
-                    console.error("Error fetching missions:", error.message)
-                    setError(error.message)
+                    console.error("Error fetching missions:", error.message);
+                    setError(error.message);
                 } else {
-                    console.error("Unknown error:", error)
-                    setError("Terjadi kesalahan tak dikenal")
+                    console.error("Unknown error:", error);
+                    setError("Terjadi kesalahan tak dikenal");
                 }
             } finally {
-                setLoading(false)
+                setLoading(false);
             }
-        }
+        };
 
-        fetchMissions()
-    }, [])
+        fetchMissionsData();
+    }, []);
 
     return (
         <div className="p-6 space-y-6">
@@ -131,5 +118,5 @@ export default function MissionPage() {
                 </div>
             )}
         </div>
-    )
+    );
 }

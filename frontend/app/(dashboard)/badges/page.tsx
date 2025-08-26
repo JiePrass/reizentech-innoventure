@@ -1,94 +1,86 @@
-"use client"
+"use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import Image from "next/image"
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Image from "next/image";
+import { GetBadges } from "@/helpers/GetBadges";
 
-// Dummy data lencana
-const badges = [
-    {
-        id: 1,
-        title: "Penjelajah Baru",
-        description: "Daftar dan bergabung ke GreenHero untuk pertama kalinya.",
-        icon: "/icons/badge.svg",
-        earned: true,
-    },
-    {
-        id: 2,
-        title: "Jejak Awal",
-        description: "Mengisi data kendaraan atau elektronik untuk pertama kali.",
-        icon: "/icons/badge.svg",
-        earned: true,
-    },
-    {
-        id: 3,
-        title: "Penyelesai Misi",
-        description: "Menyelesaikan 1 misi harian di halaman misi.",
-        icon: "/icons/badge.svg",
-        earned: true,
-    },
-    {
-        id: 4,
-        title: "Kolektor Koin I",
-        description: "Kumpulkan setidaknya 100 Koin dari aktivitas ramah lingkungan.",
-        icon: "/icons/badge.svg",
-        earned: false,
-    },
-    {
-        id: 5,
-        title: "Kolektor Koin II",
-        description: "Kumpulkan setidaknya 200 Koin dari aktivitas ramah lingkungan.",
-        icon: "/icons/badge.svg",
-        earned: false,
-    },
-    {
-        id: 6,
-        title: "Kolektor Koin III",
-        description: "Kumpulkan setidaknya 300 Koin dari aktivitas ramah lingkungan.",
-        icon: "/icons/badge.svg",
-        earned: false,
-    },
-    {
-        id: 7,
-        title: "Pelanggan Setia",
-        description: "Tukarkan lencana ini untuk mendapatkan voucher atau produk minimal satu kali.",
-        icon: "/icons/badge.svg",
-        earned: false,
-    },
-]
+// Define the Badge type based on the API response
+interface Badge {
+    id: number;
+    name: string;
+    image_url: string;
+    description: string;
+    is_owned: boolean;
+}
 
 export default function BadgesPage() {
-    const earnedBadges = badges.filter((badge) => badge.earned)
-    const lockedBadges = badges.filter((badge) => !badge.earned)
+    const [badges, setBadges] = useState<Badge[]>([]); // Use the Badge type here
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const token = localStorage.getItem("authtoken");
 
-    const renderBadgeGrid = (list: typeof badges, isEarned: boolean) => (
+    useEffect(() => {
+        // Check if the token is available
+        if (!token) {
+            setError("Token not found. Please log in again.");
+            setIsLoading(false);
+            return;
+        }
+
+        // Ambil data badges dari API
+        const fetchBadges = async () => {
+            try {
+                const badgesData = await GetBadges(token);
+                setBadges(badgesData);
+            } catch (error: unknown) {
+                if (error instanceof Error) {
+                    setError(`Gagal mengambil data lencana: ${error.message}`);
+                } else {
+                    setError("Terjadi kesalahan yang tidak diketahui");
+                }
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchBadges();
+    }, [token]);
+
+    const earnedBadges = badges.filter((badge) => badge.is_owned);
+    const lockedBadges = badges.filter((badge) => !badge.is_owned);
+
+    const renderBadgeGrid = (list: Badge[], isEarned: boolean) => (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
             {list.map((badge) => (
                 <Card
                     key={badge.id}
-                    className={`transition ${isEarned ? "opacity-100" : "opacity-50 grayscale"
-                        }`}
+                    className={`transition ${isEarned ? "opacity-100" : "opacity-50 grayscale"}`}
                 >
                     <CardHeader className="flex flex-col items-center text-center">
                         <div className="w-16 h-16 relative mb-2">
                             <Image
-                                src={badge.icon}
-                                alt={badge.title}
+                                src={badge.image_url}
+                                alt={badge.name}
                                 fill
                                 className="object-contain"
                             />
                         </div>
-                        <CardTitle className="text-lg">{badge.title}</CardTitle>
+                        <CardTitle className="text-lg">{badge.name}</CardTitle>
                     </CardHeader>
                     <CardContent className="text-sm text-center text-muted-foreground">
-                        {badge.description}
+                        {badge.description || "No description available"}
                     </CardContent>
                 </Card>
             ))}
         </div>
-    )
+    );
+
+    if (isLoading) return <p>Loading...</p>;
+    if (error) return <p>{error}</p>;
 
     return (
-        <div className="max-w-5xl mx-auto px-4 py-8 space-y-12">
+        <div className="p-6 space-y-6">
             {/* Lencana yang Dimiliki */}
             <section>
                 <h1 className="text-2xl font-bold mb-6">Lencana yang Dimiliki</h1>
@@ -109,5 +101,5 @@ export default function BadgesPage() {
                 )}
             </section>
         </div>
-    )
+    );
 }
