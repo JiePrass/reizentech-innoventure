@@ -36,6 +36,20 @@ export function LoginForm({
             console.log("Login Response:", data)
 
             if (res.ok && data) {
+                // set cookie
+                
+                const res = await fetch('/api/cookies', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: data.data.token }),
+                })
+
+                if (!res.ok) {
+                    alert('Login gagal, cookies gagal diset')
+                    console.log('error cookie login')
+                    console.log(res)
+                }
+
                 // storing to localStorage
                 localStorage.setItem('islogin', 'done')
                 localStorage.setItem('authtoken', data.data.token)

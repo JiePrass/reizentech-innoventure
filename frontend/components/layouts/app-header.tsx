@@ -15,9 +15,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useAuthMe } from "@/helpers/AuthMe"
+import LogoutAction from "@/helpers/LogoutAction"
 
 export function AppHeader() {
   const { data: dataUser, loading, error } = useAuthMe()
+  const logout = LogoutAction()
 
   if (loading) {
     console.log("loadingg..")
@@ -87,7 +89,7 @@ export function AppHeader() {
                 <span>Pengaturan</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem  onClick={() => logout()}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Keluar</span>
               </DropdownMenuItem>
