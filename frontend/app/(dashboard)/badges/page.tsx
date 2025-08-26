@@ -17,15 +17,12 @@ export default function BadgesPage() {
   const [badges, setBadges] = useState<Badge[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-
-  // Ambil token di client side
-  useEffect(() => {
-    const storedToken = localStorage.getItem("authtoken");
-    setToken(storedToken);
-  }, []);
 
   useEffect(() => {
+    const token = typeof window !== "undefined" 
+      ? localStorage.getItem("authtoken") 
+      : null;
+
     if (!token) {
       setError("Token not found. Please log in again.");
       setIsLoading(false);
@@ -48,7 +45,7 @@ export default function BadgesPage() {
     };
 
     fetchBadges();
-  }, [token]);
+  }, []);
 
   const earnedBadges = badges.filter((badge) => badge.is_owned);
   const lockedBadges = badges.filter((badge) => !badge.is_owned);
@@ -84,6 +81,7 @@ export default function BadgesPage() {
 
   return (
     <div className="p-6 space-y-6">
+      {/* Lencana yang Dimiliki */}
       <section>
         <h1 className="text-2xl font-bold mb-6">Lencana yang Dimiliki</h1>
         {earnedBadges.length > 0 ? (
@@ -93,6 +91,7 @@ export default function BadgesPage() {
         )}
       </section>
 
+      {/* Lencana yang Belum Dimiliki */}
       <section>
         <h1 className="text-2xl font-bold mb-6">Lencana yang Belum Dimiliki</h1>
         {lockedBadges.length > 0 ? (

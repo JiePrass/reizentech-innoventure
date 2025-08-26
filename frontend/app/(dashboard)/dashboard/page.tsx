@@ -83,8 +83,8 @@ export default function DashboardPage() {
     loadData()
   }, [])
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div>{error}</div>
+  if (loading) console.log("loading")
+  if (error) console.log(error)
 
   return (
     <div className="p-6 space-y-6">

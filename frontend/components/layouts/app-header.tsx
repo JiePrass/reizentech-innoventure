@@ -39,12 +39,12 @@ export function AppHeader() {
 
   if (loading) {
     console.log("loadingg..")
-    return <header className="p-4">Loading...</header>
+    // return <header className="p-4">Loading...</header>
   }
 
   if (error) {
     console.log("error get me..", error)
-    return <header className="p-4 text-red-500">Gagal memuat data</header>
+    // return <header className="p-4 text-red-500">Gagal memuat data</header>
   }
 
   return (
