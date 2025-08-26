@@ -12,7 +12,8 @@ import { GetVehicleTracker } from "@/helpers/GetVehicleTracker"
 import { PostVehicleTrackerLog } from "@/helpers/PostVehicleTrackerLog"
 
 type Vehicle = {
-  id: number
+  id?: number
+  ID?: number
   title: string
   type: "car" | "motorcycle" | "public_transport" | "walk"
   image: string
@@ -28,7 +29,6 @@ type Vehicle = {
 export default function VehicleSlider() {
   const { data: dataMe } = useAuthMe()
   const { data: vehicle } = GetVehicleTracker()
-  console.log(dataMe)
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
 
@@ -38,12 +38,12 @@ export default function VehicleSlider() {
       const initialDevices = vehicle?.data
         ?.filter((item) => item.VehicleType !== "public_transport")
         .map((d) => ({
-          id: d.id,
+          id: d.ID,
           title: d.Name,
           image: "/icons/motor.svg",
           type: d.type,
           percentage: "0%",
-          total: (d.LatestLog !== null ? d.LatestLog.CarbonEmission : 0) + " kg CO₂e",
+          total: (d.LatestLog !== null ? (parseFloat(d.LatestLog.CarbonEmission).toFixed(2)) : 0) + " kg CO₂e",
           active: false,
           watchId: null,
         }))
@@ -76,15 +76,24 @@ export default function VehicleSlider() {
   // aktifkan GPS untuk 1 kendaraan
   const handleToggleVehicle = (v: Vehicle) => {
     if (!navigator.geolocation) {
-      alert("Geolocation tidak didukung browser ini.")
-      return
+      alert("Geolocation tidak didukung browser ini.");
+      return;
     }
 
     if (!v.active) {
-      // Aktifkan kendaraan
+      // Matikan kendaraan lain dulu biar tidak semuanya aktif
+      setVehicles((prev) =>
+        prev.map((item) =>
+          item.id === v.ID
+            ? item // biarkan kendaraan yang dipilih tetap
+            : { ...item, active: false, watchId: null }
+        )
+      );
+
+      // Aktifkan kendaraan ini
       const watchId = navigator.geolocation.watchPosition(
         (pos) => {
-          const { latitude, longitude } = pos.coords
+          const { latitude, longitude } = pos.coords;
           setVehicles((prev) =>
             prev.map((item) =>
               item.id === v.id
@@ -94,32 +103,33 @@ export default function VehicleSlider() {
                     startLocation: item.startLocation ?? {
                       lat: latitude,
                       lng: longitude,
-                    }, // snap awal sekali saja
+                    }, // snap awal sekali
                   }
                 : item
             )
-          )
+          );
         },
         (err) => {
-          alert("Gagal ambil lokasi: " + err.message)
+          alert("Gagal ambil lokasi: " + err.message);
         },
         { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
-      )
+      );
 
+      // simpan watchId ke kendaraan ini
       setVehicles((prev) =>
         prev.map((item) =>
           item.id === v.id ? { ...item, active: true, watchId } : item
         )
-      )
+      );
     } else {
-      // Matikan kendaraan
+      // Matikan kendaraan ini
       if (v.watchId) {
-        navigator.geolocation.clearWatch(v.watchId)
+        navigator.geolocation.clearWatch(v.watchId);
       }
 
       navigator.geolocation.getCurrentPosition(
         async (pos) => {
-          const { latitude, longitude } = pos.coords
+          const { latitude, longitude } = pos.coords;
           const distance =
             v.startLocation &&
             haversine(
@@ -127,7 +137,8 @@ export default function VehicleSlider() {
               v.startLocation.lng,
               latitude,
               longitude
-            )
+            );
+
           setVehicles((prev) =>
             prev.map((item) =>
               item.id === v.id
@@ -140,33 +151,34 @@ export default function VehicleSlider() {
                   }
                 : item
             )
-          )
-                
-                
+          );
+
           const res = await PostVehicleTrackerLog({
             vehicle_id: v.id,
-            distance_km: parseFloat(((distance ?? 0) / 1000).toFixed(2)) ?? 0,
+            distance_km: (distance ?? 0) / 1000,
             start_lat: v.startLocation?.lat ?? 0,
             start_lon: v.startLocation?.lng ?? 0,
             end_lat: latitude,
             end_lon: longitude,
-          })
+          });
 
-          if (distance && res) {
-            console.log(res)
+          if (res) console.log(res);
+
+          if (distance) {
             alert(
               `Jarak tempuh kendaraan "${v.title}" adalah ${(distance / 1000).toFixed(
                 2
               )} KM`
-            )
+            );
           }
         },
         (err) => {
-          alert("Gagal ambil lokasi akhir: " + err.message)
+          alert("Gagal ambil lokasi akhir: " + err.message);
         }
-      )
+      );
     }
-  }
+  };
+
 
   // tambah kendaraan baru
   const handleAddVehicle = async () => {
@@ -223,8 +235,8 @@ export default function VehicleSlider() {
                   <p className="text-sm text-muted-foreground">
                     Total Karbon Terakhir <br /> {v.title}
                   </p>
-                  <p className="text-lg font-semibold">{parseFloat(v.total).toFixed(2)} kg CO₂e</p>
-                  <p className="text-xs text-gray-500">{v.percentage}</p>
+                  <p className="text-lg font-semibold">{v.total}</p>
+                  {/* <p className="text-xs text-gray-500">{v.percentage}</p> */}
                   <Button
                     variant={v.active ? "destructive" : "outline"}
                     className="w-full"
