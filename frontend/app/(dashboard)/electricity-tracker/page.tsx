@@ -17,7 +17,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { PostElectricityDevice } from "@/helpers/PostElectricityDevice"
 import { PostCarbonElectronicLog } from "@/helpers/PostCarbonElectronicLog"
-import { GetElectricityDevice } from "@/helpers/GetEletricityDevice"
+import { GetElectricityDevice } from "@/helpers/GetElectricityDevice"
 import { GetCarbonElectronicLogs } from "@/helpers/GetCarbonElectronicLog"
 import { useAuthMe } from "@/helpers/AuthMe"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
