@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { SectionCards } from "@/components/shared/section-cards"
+import { SectionElectricCards } from "@/components/shared/section-electric-cards"
 import DeviceTable from "@/components/shared/device-table"
 import { IconArrowsSort, IconFilterFilled, IconPlus, IconSearch } from "@tabler/icons-react"
 import { Input } from "@/components/ui/input"
@@ -37,6 +37,7 @@ type CarbonElectronicLogTypes = {
     device_id: number;
     duration_hours: number;
     created_at: string;
+    carbon_emission: number; // Tambahkan properti emisi karbon
 }
 
 const DEVICE_TYPES = [
@@ -51,6 +52,7 @@ export default function ElectrictyTracker() {
     const [carbonElectronicLogs, setCarbonElectronicLogs] = useState<CarbonElectronicLogTypes[]>([])
     const [search, setSearch] = useState("");
     const [open, setOpen] = useState(false)
+    const [openCarbon, setOpenCarbon] = useState(false)
     const [newDevice, setNewDevice] = useState({ name: "", type: "", power_watts: "" })
     const [newCarbonElectronicLog, setNewCarbonElectronicLog] = useState({ device_id: 0, duration_hours: "" })
 
@@ -68,18 +70,20 @@ export default function ElectrictyTracker() {
         }
     }, [dataElectricty])
 
-    // Ambil data carbon logs
+    // Ambil data carbon logs dan perbaiki pemetaan data
     useEffect(() => {
         if (dataCarbonElectronicLogs && dataCarbonElectronicLogs?.data && dataCarbonElectronicLogs?.data?.length > 0) {
+            console.log("Raw Carbon Logs Data:", dataCarbonElectronicLogs.data);  // Cek data yang diterima
             const initialCarbonElectronicLogs = dataCarbonElectronicLogs?.data?.map((log) => ({
-                id: log.id,
-                device_id: log.device_id,
-                duration_hours: log.duration_hours,
-                created_at: log.created_at,
+                id: log.ID,  // Pemetaan ID
+                device_id: log.DeviceID,  // Pemetaan DeviceID
+                duration_hours: log.DurationHours,  // Pemetaan DurationHours
+                created_at: log.LoggedAt,  // Pemetaan LoggedAt
+                carbon_emission: log.CarbonEmission,  // Pemetaan CarbonEmission
             }));
-            setCarbonElectronicLogs(initialCarbonElectronicLogs ?? [])
+            setCarbonElectronicLogs(initialCarbonElectronicLogs ?? []);
         }
-    }, [dataCarbonElectronicLogs])
+    }, [dataCarbonElectronicLogs]);
 
     // Fungsi untuk menambahkan perangkat baru
     const handleAddDevice = async () => {
@@ -120,6 +124,7 @@ export default function ElectrictyTracker() {
             device_id: newCarbonElectronicLog.device_id,
             duration_hours: parseFloat(newCarbonElectronicLog.duration_hours),
             created_at: new Date().toISOString(),
+            carbon_emission: parseFloat(newCarbonElectronicLog.duration_hours) * 0.0275 // Asumsi: perhitungan emisi karbon berdasarkan durasi
         }
 
         try {
@@ -140,13 +145,19 @@ export default function ElectrictyTracker() {
 
     // Apply search, filter, and sort for devices
     const filteredDevices = devices!
-        .filter((d) => d.name.toLowerCase().includes(search.toLowerCase()))
+        .filter((d) => d.name?.toLowerCase().includes(search.toLowerCase()))
 
     // Apply search, filter, and sort for carbon logs
     const filteredCarbonElectronicLogs = carbonElectronicLogs!
-        .filter((log) => log.device_id.toString().includes(search.toLowerCase()))
+        .filter((log) => {
+            // Pastikan log.device_id ada
+            if (!log.device_id || !log.duration_hours || !log.created_at) return false;  // Cek semua properti yang diperlukan
+            return log.device_id.toString().includes(search.toLowerCase());
+        });
 
     console.log("Data Devices", devices)
+    console.log("DATA LOG", carbonElectronicLogs)
+    console.log("Filtered Carbon Logs", filteredCarbonElectronicLogs)
 
     if (loadingDevices || loadingCarbonLogs) {
         return <div>Loading...</div>
@@ -159,7 +170,7 @@ export default function ElectrictyTracker() {
     return (
         <div className="p-6 space-y-6">
             {/* Statistik Cards */}
-            <SectionCards />
+            <SectionElectricCards />
 
             {/* Action Bar for Devices */}
             <div className="flex justify-between items-center bg-gray-100 px-6 py-3 rounded-md w-full overflow-x-auto mb-6">
@@ -197,9 +208,7 @@ export default function ElectrictyTracker() {
                                     >
                                         <option value="">Pilih Tipe Perangkat</option>
                                         {DEVICE_TYPES.map((type, index) => (
-                                            <option key={index} value={type.toLocaleLowerCase()}>
-                                                {type}
-                                            </option>
+                                            <option key={index} value={type.toLocaleLowerCase()}>{type}</option>
                                         ))}
                                     </select>
                                 </div>
@@ -254,7 +263,7 @@ export default function ElectrictyTracker() {
             <div className="flex justify-between items-center bg-gray-100 px-6 py-3 rounded-md w-full overflow-x-auto mb-6">
                 <h2 className="font-semibold text-lg whitespace-nowrap">Daftar Carbon Logs</h2>
                 <div className="flex gap-4 items-center">
-                    <Dialog open={open} onOpenChange={setOpen}>
+                    <Dialog open={openCarbon} onOpenChange={setOpenCarbon}>
                         <DialogTrigger asChild>
                             <Button size="icon" variant="ghost">
                                 <IconPlus />
@@ -266,15 +275,21 @@ export default function ElectrictyTracker() {
                             </DialogHeader>
                             <div className="space-y-4">
                                 <div>
-                                    <Label>Device ID</Label>
-                                    <Input
-                                        type="number"
+                                    <Label>Device</Label>
+                                    <select
                                         value={newCarbonElectronicLog.device_id}
                                         onChange={(e) =>
                                             setNewCarbonElectronicLog({ ...newCarbonElectronicLog, device_id: parseInt(e.target.value) })
                                         }
-                                        placeholder="Masukkan ID perangkat"
-                                    />
+                                        className="w-full border px-3 py-2 rounded-md"
+                                    >
+                                        <option value="">Pilih Device</option>
+                                        {devices.map((device) => (
+                                            <option key={device.id} value={device.id}>
+                                                {device.name} ({device.type}) {/* Display name and type */}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div>
                                     <Label>Durasi (Jam)</Label>
@@ -289,7 +304,7 @@ export default function ElectrictyTracker() {
                                 </div>
                             </div>
                             <DialogFooter>
-                                <Button variant="outline" onClick={() => setOpen(false)}>Batal</Button>
+                                <Button variant="outline" onClick={() => setOpenCarbon(false)}>Batal</Button>
                                 <Button onClick={handleAddCarbonElectronicLog}>Tambah</Button>
                             </DialogFooter>
                         </DialogContent>
@@ -323,20 +338,27 @@ export default function ElectrictyTracker() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Device ID</TableHead>
+                            <TableHead>Perangkat</TableHead>
                             <TableHead>Durasi (Jam)</TableHead>
+                            <TableHead>Emisi</TableHead>
                             <TableHead>Tanggal</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredCarbonElectronicLogs.length > 0 ? filteredCarbonElectronicLogs.map((log) => (
-                            <TableRow key={log.id}>
-                                <TableCell>{log.device_id}</TableCell>
-                                <TableCell>{log.duration_hours}</TableCell>
-                                <TableCell>{log.created_at}</TableCell>
-                            </TableRow>
-                        )) : (
+                        {filteredCarbonElectronicLogs.length > 0 ? filteredCarbonElectronicLogs.map((log) => {
+                            const device = devices.find((d) => d.id === log.device_id);  // Temukan nama perangkat berdasarkan device_id
+                            return (
+                                <TableRow key={log.id}>
+                                    <TableCell>{log.device_id}</TableCell>
+                                    <TableCell>{device ? device.name : "Tidak ditemukan"}</TableCell>
+                                    <TableCell>{log.duration_hours}</TableCell>
+                                    <TableCell>{log.carbon_emission}</TableCell>
+                                    <TableCell>{log.created_at}</TableCell>
+                                </TableRow>
+                            );
+                        }) : (
                             <TableRow>
-                                <TableCell colSpan={3} className="text-center">No data available</TableCell>
+                                <TableCell colSpan={4} className="text-center">Tidak ada data</TableCell>
                             </TableRow>
                         )}
                     </TableBody>
