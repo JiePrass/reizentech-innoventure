@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { IconPencil, IconTrendingUp } from "@tabler/icons-react"
 import Image from "next/image"
 import { fetchProfile } from "@/helpers/fetchProfile"
+import { patchProfile } from "@/helpers/editProfile"
 
 // Type definitions for the data structure
 interface Vehicle {
@@ -68,6 +69,13 @@ export default function Profile() {
     const [open, setOpen] = useState(false)
     const [profile, setProfile] = useState<ProfileData | null>(null)
     const [loading, setLoading] = useState(true)
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    const [username, setUsername] = useState("");
+    const [gender, setGender] = useState<"male" | "female" | "other" | "">("");
+    const [birthdate, setBirthdate] = useState("");      // "YYYY-MM-DD"
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -85,6 +93,24 @@ export default function Profile() {
         fetchData()
     }, [])
 
+    useEffect(() => {
+        const init = async () => {
+            const token = localStorage.getItem("authtoken");
+            if (!token) return;
+            const profileData = await fetchProfile(token);
+            setProfile(profileData);
+            // seed form
+            setName(profileData?.user?.full_name ?? "");
+            setEmail(profileData?.user?.email ?? "");
+            setUsername(profileData?.user?.username ?? "");
+            setGender((profileData as any)?.user?.gender ?? ""); // kalau ada
+            const bd = (profileData as any)?.user?.birthdate || (profileData as any)?.profile?.birthdate;
+            if (bd) setBirthdate(String(bd).slice(0, 10)); // ke YYYY-MM-DD
+            setLoading(false);
+        };
+        init();
+    }, []);
+
     if (loading) return <p className="p-6">Loading...</p>
 
     const vehicles = profile?.vehicles || []
@@ -96,6 +122,29 @@ export default function Profile() {
             electronics.reduce((acc: number, device: Electronic) => acc + (device.total_carbon_emission_g || 0), 0)) / 1000
     ).toFixed(2)
 
+    async function onSave() {
+        try {
+            setSaving(true);
+            const token = localStorage.getItem("authtoken");
+            if (!token) throw new Error("Token tidak ditemukan");
+
+            const fd = new FormData();
+            fd.append("full_name", name);
+            fd.append("username", username);
+            if (gender) fd.append("gender", gender);
+            if (birthdate) fd.append("birthdate", birthdate);
+            if (avatarFile) fd.append("avatar", avatarFile);
+
+            const resp = await patchProfile(token, fd);
+            // ...update state dari resp
+            setOpen(false);
+        } catch (e: any) {
+            console.error(e);
+            alert(e.message || "Failed to fetch");
+        } finally {
+            setSaving(false);
+        }
+    }
 
 
     return (
@@ -127,24 +176,59 @@ export default function Profile() {
                     <DialogHeader>
                         <DialogTitle>Edit Data Profil</DialogTitle>
                     </DialogHeader>
+
                     <div className="space-y-4">
                         <div>
                             <Label htmlFor="name">Nama</Label>
-                            <Input id="name" defaultValue={profile?.user?.full_name || profile?.user?.username} />
+                            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+                        </div>
+                        <div>
+                            <Label htmlFor="username">Username</Label>
+                            <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} />
                         </div>
                         <div>
                             <Label htmlFor="email">Email</Label>
-                            <Input id="email" defaultValue={profile?.user?.email} />
+                            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <Label htmlFor="gender">Gender</Label>
+                                <select
+                                    id="gender"
+                                    className="mt-2 w-full border rounded-md h-10 px-3"
+                                    value={gender}
+                                    onChange={(e) => setGender(e.target.value as any)}
+                                >
+                                    <option value="">- pilih -</option>
+                                    <option value="male">male</option>
+                                    <option value="female">female</option>
+                                    <option value="other">other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <Label htmlFor="birthdate">Birthdate</Label>
+                                <Input id="birthdate" type="date" value={birthdate} onChange={(e) => setBirthdate(e.target.value)} />
+                            </div>
+                        </div>
+
+                        <div>
+                            <Label htmlFor="avatar">Avatar (opsional)</Label>
+                            <Input
+                                id="avatar"
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => setAvatarFile(e.target.files?.[0] ?? null)}
+                            />
                         </div>
                     </div>
+
                     <DialogFooter className="mt-4">
-                        <Button variant="outline" onClick={() => setOpen(false)}>
-                            Batal
-                        </Button>
-                        <Button onClick={() => setOpen(false)}>Simpan</Button>
+                        <Button variant="outline" onClick={() => setOpen(false)}>Batal</Button>
+                        <Button onClick={onSave} disabled={saving}>{saving ? "Menyimpan..." : "Simpan"}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
 
             {/* Statistik + badge section */}
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -6,7 +6,6 @@ import {
   IconLayoutDashboardFilled,
   IconCarFilled,
   IconDeviceMobileFilled,
-  IconHelp,
   IconSparkles,
   IconTargetArrow,
   IconTrophyFilled,
@@ -53,11 +52,6 @@ const data = {
     },
   ],
   navSecondary: [
-    {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
-    },
     {
       title: "Logout",
       url: "#",

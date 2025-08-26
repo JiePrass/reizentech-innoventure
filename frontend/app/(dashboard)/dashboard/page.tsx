@@ -58,11 +58,12 @@ const formatCarbonData = (profileData: any) => {
 export default function DashboardPage() {
   const [carbonData, setCarbonData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)  // Perbaikan tipe error
+  const [point, setPoint] = useState<any>([])
+  const [error, setError] = useState<string | null>(null) 
 
   useEffect(() => {
     const loadData = async () => {
-      const token = localStorage.getItem("authtoken") // Ganti dengan token yang sesuai
+      const token = localStorage.getItem("authtoken")
       if (!token) {
         setError("Token tidak ditemukan.")
         setLoading(false)
@@ -72,8 +73,10 @@ export default function DashboardPage() {
       const profile = await fetchProfile(token)
 
       if (profile) {
+        const user = profile.user
         const data = formatCarbonData(profile)
         setCarbonData(data)
+        setPoint(user.total_points)
       } else {
         setError("Gagal memuat data.")
       }
@@ -96,7 +99,7 @@ export default function DashboardPage() {
             Hallo, <span className="text-primary">JiePrass</span>
           </h1>
           <p className="text-muted-foreground max-w-sm">
-            Anda telah berkontribusi mengurangi emisi karbon sebesar <span className="font-semibold">34,54 kg CO₂e</span> bulan ini
+            Pantau jejak emisi karbon Anda setiap hari dan mulailah langkah kecil menuju gaya hidup yang lebih ramah lingkungan.
           </p>
         </div>
         <div className="gap-6 justify-center hidden md:flex">
@@ -106,7 +109,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Statistik Cards */}
-      <SectionSumCards />
+      <SectionSumCards point={point} />
 
       {/* Grafik Tren */}
       <Card>

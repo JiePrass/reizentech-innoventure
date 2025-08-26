@@ -12,8 +12,9 @@ import {
 } from "@/components/ui/card"
 import { GetCarbonElectronicLogs } from "@/helpers/GetCarbonElectronicLog"
 import { useEffect, useState } from "react"
+import Image from "next/image"
 
-export function SectionSumCards() {
+export function SectionSumCards({ point }: number) {
     const { data: dataElectricty } = GetCarbonElectronicLogs()
 
     const [totalEmission, setTotalEmission] = useState(0)
@@ -37,7 +38,7 @@ export function SectionSumCards() {
     }, [dataElectricty?.data])
 
     return (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {/* Card Total Emission */}
             <Card className="gap-0">
                 <CardHeader className="flex gap-4 mb-2">
@@ -89,6 +90,21 @@ export function SectionSumCards() {
                 </CardContent>
                 <CardFooter>
                     <p className="text-sm text-muted-foreground">Tertinggi bulan ini</p>
+                </CardFooter>
+            </Card>
+
+            <Card className="gap-0">
+                <CardHeader className="flex gap-4 mb-2 justify-between">
+                    <CardTitle className="font-normal text-sm">Total Point</CardTitle>
+                    <Image src="/icons/green-point.svg" alt="point" width={32} height={32} />
+                </CardHeader>
+                <CardContent>
+                    <CardDescription className="text-[28px] whitespace-nowrap font-semibold text-black mb-4">
+                        {point} Poin
+                    </CardDescription>
+                </CardContent>
+                <CardFooter>
+                    <p className="text-sm text-muted-foreground">Total Poin Yang Dikumpulkan</p>
                 </CardFooter>
             </Card>
         </div>
