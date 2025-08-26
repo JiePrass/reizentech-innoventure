@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import Image from "next/image"
 import { IconCheck } from "@tabler/icons-react"
 import { GetLeaderboard } from "@/helpers/GetLeaderboard" // Import the helper function
+import { fetchProfile } from "@/helpers/fetchProfile"
 
 type LeaderboardUser = {
     rank: number
@@ -23,40 +24,41 @@ type LeaderboardUser = {
 
 export default function LeaderboardPage() {
     const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([])
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [profile, setProfile] = useState<any>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        const fetchLeaderboardData = async () => {
-            try {
-                const token = localStorage.getItem("authtoken")
-                if (!token) {
-                    console.error("Token tidak ditemukan. Silakan login ulang.")
-                    return
-                }
+        const fetchData = async () => {
+            const token = localStorage.getItem("authtoken")
+            if (!token) {
+                console.error("Token tidak ditemukan. Silakan login ulang.")
+                return
+            }
 
-                // Fetch leaderboard data using the helper function
-                const data = await GetLeaderboard(token)
-                // Ensure that the structure matches what we expect (directly accessing the leaderboard)
-                if (data && Array.isArray(data)) {
-                    setLeaderboard(data) // Update the state with the leaderboard array
-                } else {
-                    console.error("Leaderboard data not available or malformed:", data)
+            try {
+                // Fetch profile data
+                const profileData = await fetchProfile(token)
+                setProfile(profileData)
+
+                // Fetch leaderboard data
+                const leaderboardData = await GetLeaderboard(token)
+                if (leaderboardData && Array.isArray(leaderboardData)) {
+                    setLeaderboard(leaderboardData) // Update leaderboard data
                 }
             } catch (err) {
-                console.error("Error fetching leaderboard:", err)
+                console.error("Error fetching data:", err)
             } finally {
                 setLoading(false)
             }
         }
 
-        fetchLeaderboardData()
+        fetchData()
     }, [])
 
     if (loading) return <p className="p-6">Loading...</p>
 
     const topThree = leaderboard.slice(0, 3)
-
-    console.log("DATA", leaderboard)
 
     return (
         <div className="p-6 space-y-6">
@@ -65,9 +67,7 @@ export default function LeaderboardPage() {
                 <Card className="flex justify-center">
                     <CardContent>
                         <div className="flex w-full mb-3 justify-between">
-                            <p className="text-4xl font-semibold">
-                                {leaderboard.reduce((sum, u) => sum + u.completed_missions, 0)} Misi
-                            </p>
+                            <p className="text-4xl font-semibold">{profile?.missions.length} Misi</p>
                             <div className="bg-green-700 p-2 rounded-full aspect-square text-white">
                                 <IconCheck size={32} />
                             </div>
@@ -78,9 +78,7 @@ export default function LeaderboardPage() {
                 <Card className="flex justify-center">
                     <CardContent>
                         <div className="flex w-full mb-3 justify-between">
-                            <p className="text-4xl font-semibold">
-                                {leaderboard.reduce((sum, u) => sum + u.total_points, 0)}
-                            </p>
+                            <p className="text-4xl font-semibold">{profile?.user.total_points}</p>
                             <div className="rounded-full aspect-square">
                                 <Image src="/icons/green-point.svg" alt="point" width={52} height={52} />
                             </div>

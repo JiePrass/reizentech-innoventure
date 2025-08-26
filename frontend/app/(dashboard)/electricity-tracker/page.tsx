@@ -102,7 +102,7 @@ export default function ElectrictyTracker() {
                 device_name: newDevice.name,
                 power_watts: parseFloat(newDevice.power_watts),
                 device_type: newDevice.type,
-                user_id: dataMe?.data?.ID ? parseInt(dataMe.data.ID) : null
+                user_id: dataMe?.data?.id ? parseInt(dataMe.data.id) : null
             })
 
             console.log(result)
@@ -169,11 +169,6 @@ export default function ElectrictyTracker() {
 
         return { formattedDate, formattedTime };
     }
-
-
-    console.log("Data Devices", devices)
-    console.log("DATA LOG", carbonElectronicLogs)
-    console.log("Filtered Carbon Logs", filteredCarbonElectronicLogs)
 
     if (loadingDevices || loadingCarbonLogs) {
         return <div>Loading...</div>
