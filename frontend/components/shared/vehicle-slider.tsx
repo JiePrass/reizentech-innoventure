@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, } from "react"
 import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { PostVehicleTracker } from "@/helpers/PostVehicleTracker"
 import { useAuthMe } from "@/helpers/AuthMe"
 import { GetVehicleTracker } from "@/helpers/GetVehicleTracker"
+import { PostVehicleTrackerLog } from "@/helpers/PostVehicleTrackerLog"
 
 type Vehicle = {
   id: number
@@ -18,88 +19,184 @@ type Vehicle = {
   total: string
   percentage: string
   active: boolean
+  startLocation?: { lat: number; lng: number }
+  endLocation?: { lat: number; lng: number }
+  distance?: number // dalam meter
+  watchId?: number | null
 }
-
-const kendaraanPribadi: Vehicle[] = [
-  {
-    id: 1,
-    title: "Sepeda Motor 1",
-    type: "car",
-    image: "/icons/motor.svg",
-    total: "9,82 kg CO₂e",
-    percentage: "5,63%",
-    active: true,
-  },
-  {
-    id: 2,
-    title: "Mobil Pribadi 1",
-    type: "car",
-    image: "/icons/motor.svg",
-    total: "0 kg CO₂e",
-    percentage: "6,35%",
-    active: false,
-  },
-]
 
 export default function VehicleSlider() {
   const { data: dataMe } = useAuthMe()
-  const [vehicles, setVehicles] = useState<Vehicle[]>(kendaraanPribadi)
   const { data: vehicle } = GetVehicleTracker()
 
-  console.log(vehicle)
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
 
-  
   useEffect(() => {
-        if (vehicle && vehicle?.data && vehicle?.data?.length > 0 ) {
-            const initialDevices = vehicle?.data?.map((d) => ({
-                id: d.id,
-                date: d.created_at.split("T")[0],
-                title: d.name,
-                image: "/icons/motor.svg",
-                type: d.type,
-                percentage: "0%",
-                total: "0 kg CO₂e",
-                active: false
-            }));
-            setVehicles(initialDevices ?? [])
-            console.log(vehicle.data)
-        }
-    } , [vehicle?.data])
-  const [open, setOpen] = useState(false)
+    if (vehicle?.data && vehicle?.data?.length > 0) {
+      const initialDevices = vehicle?.data
+        ?.filter((item) => item.vehicle_type !== "public_transport")
+        .map((d) => ({
+          id: d.id,
+          title: d.name,
+          image: "/icons/motor.svg",
+          type: d.type,
+          percentage: "0%",
+          total: "0 kg CO₂e",
+          active: false,
+          watchId: null,
+        }))
+      setVehicles(initialDevices ?? [])
+    }
+  }, [vehicle?.data])
 
-  // state form
+  const [open, setOpen] = useState(false)
   const [newVehicle, setNewVehicle] = useState({
     name: "",
-    vehicle_type: "pribadi",
-    fuel_type: "bensin",
-    power_watts: 0,
+    vehicle_type: "car",
+    fuel_type: "petrol",
   })
 
-  // handle tambah kendaraan
-  const handleAddVehicle = async () => {
-    if (!newVehicle.name || !newVehicle.power_watts) return
+  // fungsi hitung jarak haversine (meter) ini generate oleh Ai
+  const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371e3
+    const toRad = (x: number) => (x * Math.PI) / 180
+    const φ1 = toRad(lat1)
+    const φ2 = toRad(lat2)
+    const Δφ = toRad(lat2 - lat1)
+    const Δλ = toRad(lon2 - lon1)
+    const a =
+      Math.sin(Δφ / 2) ** 2 +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    return R * c
+  }
 
+  // aktifkan GPS untuk 1 kendaraan
+  const handleToggleVehicle = (v: Vehicle) => {
+    if (!navigator.geolocation) {
+      alert("Geolocation tidak didukung browser ini.")
+      return
+    }
+
+    if (!v.active) {
+      // Aktifkan kendaraan
+      const watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords
+          setVehicles((prev) =>
+            prev.map((item) =>
+              item.id === v.id
+                ? {
+                    ...item,
+                    active: true,
+                    startLocation: item.startLocation ?? {
+                      lat: latitude,
+                      lng: longitude,
+                    }, // snap awal sekali saja
+                  }
+                : item
+            )
+          )
+        },
+        (err) => {
+          alert("Gagal ambil lokasi: " + err.message)
+        },
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
+      )
+
+      setVehicles((prev) =>
+        prev.map((item) =>
+          item.id === v.id ? { ...item, active: true, watchId } : item
+        )
+      )
+    } else {
+      // Matikan kendaraan
+      if (v.watchId) {
+        navigator.geolocation.clearWatch(v.watchId)
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const { latitude, longitude } = pos.coords
+          const distance =
+            v.startLocation &&
+            haversine(
+              v.startLocation.lat,
+              v.startLocation.lng,
+              latitude,
+              longitude
+            )
+          setVehicles((prev) =>
+            prev.map((item) =>
+              item.id === v.id
+                ? {
+                    ...item,
+                    active: false,
+                    endLocation: { lat: latitude, lng: longitude },
+                    distance: distance ?? 0,
+                    watchId: null,
+                  }
+                : item
+            )
+          )
+                
+                
+          const res = await PostVehicleTrackerLog({
+            vehicle_id: v.id,
+            distance_km: (distance ?? 0) / 1000, // convert ke KM
+            start_lat: v.startLocation?.lat ?? 0,
+            start_lon: v.startLocation?.lng ?? 0,
+            end_lat: latitude,
+            end_lon: longitude,
+          })
+
+          if (res) {
+            
+            console.log(res)
+          }
+
+          if (distance) {
+            alert(
+              `Jarak tempuh kendaraan "${v.title}" adalah ${(distance / 1000).toFixed(
+                2
+              )} KM`
+            )
+          }
+        },
+        (err) => {
+          alert("Gagal ambil lokasi akhir: " + err.message)
+        }
+      )
+    }
+  }
+
+  // tambah kendaraan baru
+  const handleAddVehicle = async () => {
+    if (!newVehicle.name) return
     try {
       const res = await PostVehicleTracker({
-        ...newVehicle,
         user_id: dataMe?.data?.ID ? parseInt(dataMe.data.ID) : null,
+        ...newVehicle,
       })
 
       if (res) {
         const newData: Vehicle = {
           id: vehicles.length + 1,
           title: newVehicle.name,
-          type: newVehicle.vehicle_type as "car" | "motorcycle" | "public_transport" | "walk",
+          type: newVehicle.vehicle_type as
+            | "car"
+            | "motorcycle"
+            | "public_transport"
+            | "walk",
           image: "/icons/motor.svg",
-          total: `${(newVehicle.power_watts * 0.0275).toFixed(2)} kg CO₂e`,
-          percentage: "0%", // bisa dihitung dari total semua kalau mau
-          active: true,
+          total: `0 kg CO₂e`,
+          percentage: "0%",
+          active: false,
+          watchId: null,
         }
         setVehicles([...vehicles, newData])
-        setNewVehicle({ name: "", vehicle_type: "pribadi", fuel_type: "bensin", power_watts: 0 })
+        setNewVehicle({ name: "", vehicle_type: "car", fuel_type: "petrol" })
         setOpen(false)
-      } else {
-        console.error("Gagal menambahkan kendaraan:", res)
       }
     } catch (err) {
       console.error("Error add vehicle:", err)
@@ -109,7 +206,6 @@ export default function VehicleSlider() {
   return (
     <section className="space-y-6">
       <h2 className="text-xl font-semibold">Kendaraan Pribadi</h2>
-
       <div className="w-full overflow-hidden">
         <ScrollArea className="max-w-[166vh] whitespace-nowrap">
           <div className="flex gap-4 pb-4">
@@ -127,13 +223,35 @@ export default function VehicleSlider() {
                 </CardHeader>
                 <CardContent className="text-center space-y-2">
                   <p className="text-sm text-muted-foreground">
-                    Total Karbon <br /> {v.title}
+                    Total Karbon Terakhir <br /> {v.title}
                   </p>
                   <p className="text-lg font-semibold">{v.total}</p>
                   <p className="text-xs text-gray-500">{v.percentage}</p>
-                  <Button variant={v.active ? "destructive" : "outline"} className="w-full">
+                  <Button
+                    variant={v.active ? "destructive" : "outline"}
+                    className="w-full"
+                    onClick={() => handleToggleVehicle(v)}
+                  >
                     {v.active ? "Matikan Kendaraan" : "Aktifkan Kendaraan"}
                   </Button>
+
+                  {v.startLocation && (
+                    <p className="mt-2 text-xs">
+                      Start: {v.startLocation.lat.toFixed(5)},{" "}
+                      {v.startLocation.lng.toFixed(5)}
+                    </p>
+                  )}
+                  {v.endLocation && (
+                    <p className="mt-2 text-xs">
+                      End: {v.endLocation.lat.toFixed(5)},{" "}
+                      {v.endLocation.lng.toFixed(5)}
+                    </p>
+                  )}
+                  {v.distance !== undefined && !v.active && (
+                    <p className="mt-2 text-xs font-semibold">
+                      Jarak: {(v.distance / 1000).toFixed(2)} KM
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             ))}
@@ -157,13 +275,20 @@ export default function VehicleSlider() {
                     type="text"
                     placeholder="Nama Kendaraan"
                     value={newVehicle.name}
-                    onChange={(e) => setNewVehicle({ ...newVehicle, name: e.target.value })}
+                    onChange={(e) =>
+                      setNewVehicle({ ...newVehicle, name: e.target.value })
+                    }
                     className="w-full border rounded-md p-2"
                   />
                   <select
                     className="w-full border rounded-md p-2"
                     value={newVehicle.vehicle_type}
-                    onChange={(e) => setNewVehicle({ ...newVehicle, vehicle_type: e.target.value })}
+                    onChange={(e) =>
+                      setNewVehicle({
+                        ...newVehicle,
+                        vehicle_type: e.target.value,
+                      })
+                    }
                   >
                     <option value="car">Car</option>
                     <option value="motorcycle">Motorcycle</option>
@@ -174,20 +299,18 @@ export default function VehicleSlider() {
                   <select
                     className="w-full border rounded-md p-2"
                     value={newVehicle.fuel_type}
-                    onChange={(e) => setNewVehicle({ ...newVehicle, fuel_type: e.target.value })}
+                    onChange={(e) =>
+                      setNewVehicle({
+                        ...newVehicle,
+                        fuel_type: e.target.value,
+                      })
+                    }
                   >
                     <option value="petrol">Petrol</option>
                     <option value="diesel">Diesel</option>
                     <option value="electric">Electric</option>
                     <option value="none">None</option>
                   </select>
-                  <input
-                    type="number"
-                    placeholder="Daya (Watt)"
-                    value={newVehicle.power_watts}
-                    onChange={(e) => setNewVehicle({ ...newVehicle, power_watts: parseInt(e.target.value) || 0 })}
-                    className="w-full border rounded-md p-2"
-                  />
                   <Button className="w-full" onClick={handleAddVehicle}>
                     Simpan
                   </Button>

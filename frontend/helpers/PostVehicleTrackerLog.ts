@@ -1,9 +1,12 @@
 /* eslint-disable */
 interface ElectronicPayload {
-  name: string;
-  vehicle_type: string;
-  fuel_type: string;
-  user_id?: number | null;
+  start_lat: string | number;
+  start_lon: string | number;
+  end_lat: string | number;
+  end_lon: string | number;
+  distance_km: number;
+  // duration_minutes: number;
+  vehicle_id?: number | null;
 }
 
 interface ResponseData {
@@ -12,10 +15,10 @@ interface ResponseData {
   message: string;
 }
 
-export async function PostVehicleTracker(payload: ElectronicPayload): Promise<ResponseData> {
+export async function PostVehicleTrackerLog(payload: ElectronicPayload): Promise<ResponseData> {
   try {
     const res = await fetch(
-      process.env.NEXT_PUBLIC_API_URL + "/api/carbon/vehicle",
+      process.env.NEXT_PUBLIC_API_URL + "/api/carbon/vehicle-log",
       {
         method: "POST",
         headers: {
