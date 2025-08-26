@@ -6,6 +6,7 @@ import (
 )
 
 // UserCustomDataResponseDTO untuk endpoint custom data user
+// UserCustomDataResponseDTO untuk endpoint custom data user
 type UserCustomDataResponseDTO struct {
 	User          UserDetailResponseDTO   `json:"user"`
 	Vehicles      []CustomVehicleDTO      `json:"vehicles,omitempty"`
@@ -15,8 +16,15 @@ type UserCustomDataResponseDTO struct {
 	PointHistory  []CustomPointTransactionDTO `json:"point_history,omitempty"`
 	ActivityLogs  []CustomActivityLogDTO  `json:"activity_logs,omitempty"`
 	Orders        []CustomOrderDTO        `json:"orders,omitempty"`
+	MonthlyVehicleCarbon    []MonthlyCarbonDTO    `json:"monthly_vehicle_carbon,omitempty"`    // Tambahan baru
+	MonthlyElectronicCarbon []MonthlyCarbonDTO    `json:"monthly_electronic_carbon,omitempty"` // Tambahan baru
 }
 
+// MonthlyCarbonDTO untuk data karbon bulanan
+type MonthlyCarbonDTO struct {
+	Month        time.Time `json:"month"`
+	TotalCarbon  float64   `json:"total_carbon_emission_g"`
+}
 
 
 type UserDetailResponseDTO struct {

@@ -13,24 +13,24 @@ import (
 
 type CarbonServiceInterface interface {
 	CreateVehicle(ctx context.Context, userID int64, req *dto.CreateVehicleDTO) (*models.CarbonVehicle, error)
-	ListUserVehicles(ctx context.Context, userID int64) ([]*models.CarbonVehicle, error)
+	ListUserVehicles(ctx context.Context, userID int64) ([]*models.CarbonVehicleWithLog, error)
 	AddVehicleLog(ctx context.Context, userID int64, req *dto.AddVehicleLogDTO) error
 	GetVehicleLogs(ctx context.Context, userID, vehicleID int64) ([]*models.CarbonVehicleLog, error)
-	
+	GetVehicleLogByID(ctx context.Context, userID, logID int64) (*models.CarbonVehicleLog, error)
+
 	CreateElectronic(ctx context.Context, userID int64, req *dto.CreateElectronicDTO) (*models.CarbonElectronic, error)
 	ListUserElectronics(ctx context.Context, userID int64) ([]*models.CarbonElectronic, error)
 	AddElectronicsLog(ctx context.Context, userID int64, req *dto.AddElectronicsLogDTO) error
 	GetElectronicsLogs(ctx context.Context, userID, deviceID int64) ([]*models.CarbonElectronicLog, error)
 
-    EditVehicle(ctx context.Context, userID, vehicleID int64, req *dto.EditVehicleDTO) (*models.CarbonVehicle, error)
+	EditVehicle(ctx context.Context, userID, vehicleID int64, req *dto.EditVehicleDTO) (*models.CarbonVehicle, error)
 	DeleteVehicle(ctx context.Context, userID, vehicleID int64) error
 	GetAllVehicleLogs(ctx context.Context, userID int64) ([]*models.CarbonVehicleLog, error)
-	
+
 	EditElectronic(ctx context.Context, userID, deviceID int64, req *dto.EditElectronicDTO) (*models.CarbonElectronic, error)
 	DeleteElectronic(ctx context.Context, userID, deviceID int64) error
 	GetAllElectronicLogs(ctx context.Context, userID int64) ([]*models.CarbonElectronicLog, error)
 
-    
 	// Electronics methods would be similarly updated
 }
 
@@ -45,7 +45,6 @@ func NewCarbonService(carbonRepo repository.CarbonRepository, missionRepo reposi
 		missionRepo: missionRepo,
 	}
 }
-
 
 // ======================== VEHICLE ========================
 
@@ -66,82 +65,82 @@ func (s *CarbonService) CreateVehicle(ctx context.Context, userID int64, req *dt
 		Name:        req.Name,
 	}
 
-    
-
 	return s.carbonRepo.CreateVehicle(ctx, vehicle)
 }
 
-func (s *CarbonService) ListUserVehicles(ctx context.Context, userID int64) ([]*models.CarbonVehicle, error) {
+func (s *CarbonService) ListUserVehicles(ctx context.Context, userID int64) ([]*models.CarbonVehicleWithLog, error) {
 	return s.carbonRepo.ListUserVehicles(ctx, userID)
 }
 
 func (s *CarbonService) AddVehicleLog(ctx context.Context, userID int64, req *dto.AddVehicleLogDTO) error {
-    var vehicle *models.CarbonVehicle
-    var err error
+	var vehicle *models.CarbonVehicle
+	var err error
 
-    if req.VehicleID != nil {
-        vehicle, err = s.carbonRepo.FindVehicleByID(ctx, *req.VehicleID)
-        if err != nil {
-            return err
-        }
-        if vehicle == nil {
-            return errors.New("vehicle not found")
-        }
-        if vehicle.UserID != userID {
-            return errors.New("vehicle does not belong to user")
-        }
-    } else {
-        existing, err := s.carbonRepo.FindVehicleByUserAndName(ctx, userID, req.VehicleName)
-        if err != nil {
-            return err
-        }
-        if existing != nil {
-            vehicle = existing
-        } else {
-            vehicle, err = s.carbonRepo.CreateVehicle(ctx, &models.CarbonVehicle{
-                UserID:      userID,
-                VehicleType: models.VehicleType(req.VehicleType),
-                FuelType:    models.FuelType(req.FuelType),
-                Name:        req.VehicleName,
-            })
-            if err != nil {
-                return err
-            }
-        }
-    }
+	if req.VehicleID != nil {
+		vehicle, err = s.carbonRepo.FindVehicleByID(ctx, *req.VehicleID)
+		if err != nil {
+			return err
+		}
+		if vehicle == nil {
+			return errors.New("vehicle not found")
+		}
+		if vehicle.UserID != userID {
+			return errors.New("vehicle does not belong to user")
+		}
+	} else {
+		existing, err := s.carbonRepo.FindVehicleByUserAndName(ctx, userID, req.VehicleName)
+		if err != nil {
+			return err
+		}
+		if existing != nil {
+			vehicle = existing
+		} else {
+			vehicle, err = s.carbonRepo.CreateVehicle(ctx, &models.CarbonVehicle{
+				UserID:      userID,
+				VehicleType: models.VehicleType(req.VehicleType),
+				FuelType:    models.FuelType(req.FuelType),
+				Name:        req.VehicleName,
+			})
+			if err != nil {
+				return err
+			}
+		}
+	}
 
-    var factor float64
-    switch vehicle.FuelType {
-    case models.FuelPetrol:
-        factor = 120.0
-    case models.FuelDiesel:
-        factor = 150.0
-    case models.FuelElectric:
-        factor = 10.0
-    case models.FuelNone:
-        factor = 0
-    default:
-        factor = 100.0
-    }
-    carbon := req.DistanceKm * factor
+	var factor float64
+	switch vehicle.FuelType {
+	case models.FuelPetrol:
+		factor = 0.161
+	case models.FuelDiesel:
+		factor = 0.162
+	case models.FuelElectric:
+		factor = 0.095
+	case models.FuelNone:
+		factor = 0
+	default:
+		factor = 0.16
+	}
 
-    // Simpan log
-    err = s.carbonRepo.CreateVehicleLog(ctx, &models.CarbonVehicleLog{
-        VehicleID:       vehicle.ID,
-        StartLocation:   req.StartLocation,
-        EndLocation:     req.EndLocation,
-        DistanceKm:      req.DistanceKm,
-        DurationMinutes: req.DurationMinutes,
-        CarbonEmission:  carbon,
-    })
-    if err != nil {
-        return err
-    }
+	carbon := req.DistanceKm * factor
 
-    // 🔥 Cek missions setelah tambah log
-    return s.missionRepo.CheckAllUserMissions(ctx, userID)
+	// Simpan log
+	err = s.carbonRepo.CreateVehicleLog(ctx, &models.CarbonVehicleLog{
+		VehicleID:       vehicle.ID,
+		StartLat:        req.StartLat,
+		StartLon:        req.StartLon,
+		EndLat:          req.EndLat,
+		EndLon:          req.EndLon,
+		DistanceKm:      req.DistanceKm,
+		DurationMinutes: req.DurationMinutes,
+		CarbonEmission:  carbon,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return s.missionRepo.CheckAllUserMissions(ctx, userID)
 }
-
 
 func (s *CarbonService) GetVehicleLogs(ctx context.Context, userID, vehicleID int64) ([]*models.CarbonVehicleLog, error) {
 	vehicle, err := s.carbonRepo.FindVehicleByID(ctx, vehicleID)
@@ -154,9 +153,10 @@ func (s *CarbonService) GetVehicleLogs(ctx context.Context, userID, vehicleID in
 	if vehicle.UserID != userID {
 		return nil, errors.New("vehicle does not belong to user")
 	}
-	
+
 	return s.carbonRepo.GetVehicleLogs(ctx, vehicleID)
 }
+
 
 func (s *CarbonService) CreateElectronic(ctx context.Context, userID int64, req *dto.CreateElectronicDTO) (*models.CarbonElectronic, error) {
 	existing, err := s.carbonRepo.FindElectronicsByUserAndName(ctx, userID, req.DeviceName)
@@ -182,55 +182,54 @@ func (s *CarbonService) ListUserElectronics(ctx context.Context, userID int64) (
 }
 
 func (s *CarbonService) AddElectronicsLog(ctx context.Context, userID int64, req *dto.AddElectronicsLogDTO) error {
-    var device *models.CarbonElectronic
-    var err error
+	var device *models.CarbonElectronic
+	var err error
 
-    if req.DeviceID != nil {
-        device, err = s.carbonRepo.FindElectronicsByID(ctx, *req.DeviceID)
-        if err != nil {
-            return err
-        }
-        if device == nil {
-            return errors.New("electronic device not found")
-        }
-        if device.UserID != userID {
-            return errors.New("electronic device does not belong to user")
-        }
-    } else {
-        existing, err := s.carbonRepo.FindElectronicsByUserAndName(ctx, userID, req.DeviceName)
-        if err != nil {
-            return err
-        }
-        if existing != nil {
-            device = existing
-        } else {
-            device, err = s.carbonRepo.CreateElectronics(ctx, &models.CarbonElectronic{
-                UserID:     userID,
-                DeviceName: req.DeviceName,
-                DeviceType: req.DeviceType,
-                PowerWatts: req.PowerWatts,
-            })
-            if err != nil {
-                return err
-            }
-        }
-    }
+	// Cari atau buat device
+	if req.DeviceID != nil {
+		device, err = s.carbonRepo.FindElectronicsByID(ctx, *req.DeviceID)
+		if err != nil {
+			return err
+		}
+		if device == nil {
+			return errors.New("electronic device not found")
+		}
+		if device.UserID != userID {
+			return errors.New("electronic device does not belong to user")
+		}
+	} else {
+		existing, err := s.carbonRepo.FindElectronicsByUserAndName(ctx, userID, req.DeviceName)
+		if err != nil {
+			return err
+		}
+		if existing != nil {
+			device = existing
+		} else {
+			device, err = s.carbonRepo.CreateElectronics(ctx, &models.CarbonElectronic{
+				UserID:     userID,
+				DeviceName: req.DeviceName,
+				DeviceType: req.DeviceType,
+				PowerWatts: req.PowerWatts,
+			})
+			if err != nil {
+				return err
+			}
+		}
+	}
 
-    const conversionFactor = 0.475
-    carbon := float64(device.PowerWatts) * req.DurationHours * conversionFactor
+	carbon := float64(device.PowerWatts) / 1000.0 * req.DurationHours * 0.475
 
-    err = s.carbonRepo.CreateElectronicsLog(ctx, &models.CarbonElectronicLog{
-        DeviceID:       device.ID,
-        DurationHours:  req.DurationHours,
-        CarbonEmission: carbon,
-		LoggedAt: time.Now(),
+	err = s.carbonRepo.CreateElectronicsLog(ctx, &models.CarbonElectronicLog{
+		DeviceID:       device.ID,
+		DurationHours:  req.DurationHours,
+		CarbonEmission: carbon,
+		LoggedAt:       time.Now(),
+	})
+	if err != nil {
+		return err
+	}
 
-    })
-    if err != nil {
-        return err
-    }
-
-    return s.missionRepo.CheckAllUserMissions(ctx, userID)
+	return s.missionRepo.CheckAllUserMissions(ctx, userID)
 }
 
 func (s *CarbonService) GetElectronicsLogs(ctx context.Context, userID, deviceID int64) ([]*models.CarbonElectronicLog, error) {
@@ -244,7 +243,7 @@ func (s *CarbonService) GetElectronicsLogs(ctx context.Context, userID, deviceID
 	if device.UserID != userID {
 		return nil, errors.New("electronic device does not belong to user")
 	}
-	
+
 	return s.carbonRepo.GetElectronicsLogs(ctx, deviceID)
 }
 
@@ -260,7 +259,6 @@ func (s *CarbonService) EditVehicle(ctx context.Context, userID, vehicleID int64
 		return nil, errors.New("vehicle does not belong to user")
 	}
 
-	// Check if name is being changed and if it conflicts with another vehicle
 	if req.Name != "" && req.Name != vehicle.Name {
 		existing, err := s.carbonRepo.FindVehicleByUserAndName(ctx, userID, req.Name)
 		if err != nil {
@@ -312,6 +310,10 @@ func (s *CarbonService) DeleteVehicle(ctx context.Context, userID, vehicleID int
 func (s *CarbonService) GetAllVehicleLogs(ctx context.Context, userID int64) ([]*models.CarbonVehicleLog, error) {
 	return s.carbonRepo.GetAllVehicleLogsByUser(ctx, userID)
 }
+func (s *CarbonService) GetVehicleLogByID(ctx context.Context, userID, logID int64) (*models.CarbonVehicleLog, error) {
+    return s.carbonRepo.GetVehicleLogByID(ctx, userID, logID)
+}
+
 
 func (s *CarbonService) EditElectronic(ctx context.Context, userID, deviceID int64, req *dto.EditElectronicDTO) (*models.CarbonElectronic, error) {
 	device, err := s.carbonRepo.FindElectronicsByID(ctx, deviceID)

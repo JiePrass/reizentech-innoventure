@@ -63,7 +63,7 @@ func SendEmailVerification(toEmail string, verificationToken string) error {
 `, verifyURL)
 
 	msg := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n"
-	displayName := "SMKN 4 Kota Bogor"
+	displayName := "GreenFlow"
 	msg += fmt.Sprintf("From: %s <%s>\nTo: %s\nSubject: %s\n\n%s", displayName, from, toEmail, subject, body)
 
 	auth := smtp.PlainAuth("", from, password, smtpHost)

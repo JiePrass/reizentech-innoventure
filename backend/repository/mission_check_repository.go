@@ -78,7 +78,7 @@ func (r *checkMissionRepository) FindByID(ctx context.Context, id int64) (*model
 
 func (r *checkMissionRepository) FindActiveMissions(ctx context.Context) ([]*model.Mission, error) {
 	query := `
-		SELECT id, title, description, mission_type, criteria_type, points_reward, 
+		SELECT id, title, description, mission_type, criteria_type, points_reward,
 		       gives_badge, badge_id, target_value, created_at, expired_at
 		FROM missions
 		WHERE (expired_at IS NULL OR expired_at > $1)

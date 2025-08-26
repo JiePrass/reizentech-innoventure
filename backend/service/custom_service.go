@@ -184,8 +184,24 @@ func (s *userCustomEndpointService) mapToDTO(data *repository.UserCustomData) *d
 		response.Orders = append(response.Orders, orderDTO)
 	}
 
+	for _, mvc := range data.MonthlyVehicleCarbon {
+		response.MonthlyVehicleCarbon = append(response.MonthlyVehicleCarbon, dto.MonthlyCarbonDTO{
+			Month:       mvc.Month,
+			TotalCarbon: mvc.TotalCarbon,
+		})
+	}
+
+	// Map monthly electronic carbon
+	for _, mec := range data.MonthlyElectronicCarbon {
+		response.MonthlyElectronicCarbon = append(response.MonthlyElectronicCarbon, dto.MonthlyCarbonDTO{
+			Month:       mec.Month,
+			TotalCarbon: mec.TotalCarbon,
+		})
+	}
+
 	return response
 }
+
 
 func (s *userCustomEndpointService) mapLeaderboardToDTO(entries []repository.LeaderboardEntry, page, limit int) []dto.LeaderboardItemDTO {
 	var leaderboard []dto.LeaderboardItemDTO

@@ -2,6 +2,8 @@
 package controller
 
 import (
+	"database/sql"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -28,6 +30,7 @@ func InitCarbonController(app *fiber.App, svc service.CarbonServiceInterface, mw
 	public.Post("/vehicle-log", ctrl.AddVehicleLog)
 	public.Get("/vehicle/:id/logs", ctrl.GetVehicleLogs)
 	public.Get("/vehicle/logs", ctrl.GetAllVehicleLogs)
+	public.Get("/vehicle/logs/:id", ctrl.GetVehicleLogByID)
 
 	public.Post("/electronic", ctrl.CreateElectronic)
 	public.Get("/electronics", ctrl.ListUserElectronics)
@@ -67,6 +70,31 @@ func (c *CarbonController) ListUserVehicles(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusOK).JSON(helpers.SuccessResponseWithData(true, "vehicles retrieved successfully", vehicles))
 }
+
+func (c *CarbonController) GetVehicleLogByID(ctx *fiber.Ctx) error {
+    // Ambil userID dari claims
+    claims := helpers.GetUserClaims(ctx)
+    userID, _ := strconv.ParseInt(claims.UserID, 10, 64)
+
+    // Ambil log ID dari params
+    logID, err := strconv.ParseInt(ctx.Params("id"), 10, 64)
+    if err != nil {
+        return ctx.Status(fiber.StatusBadRequest).JSON(helpers.BasicResponse(false, "invalid log ID"))
+    }
+	
+    // Panggil service untuk ambil log per logID + cek ownership userID
+    log, err := c.carbonService.GetVehicleLogByID(ctx.Context(), userID, logID)
+    if err != nil {
+        if errors.Is(err, sql.ErrNoRows) {
+            return ctx.Status(fiber.StatusNotFound).JSON(helpers.BasicResponse(false, "log not found"))
+        }
+        return ctx.Status(fiber.StatusInternalServerError).JSON(helpers.BasicResponse(false, err.Error()))
+    }
+
+    return ctx.Status(fiber.StatusOK).JSON(helpers.SuccessResponseWithData(true, "vehicle log retrieved successfully", log))
+}
+
+
 
 func (c *CarbonController) AddVehicleLog(ctx *fiber.Ctx) error {
 	claims := helpers.GetUserClaims(ctx)

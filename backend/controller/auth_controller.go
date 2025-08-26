@@ -22,15 +22,18 @@ func InitAuthController(app *fiber.App, svc service.AuthServiceInterface, mw *mi
 	public := app.Group("/api/auth")
 	public.Post("/register", ctrl.Register)
 	public.Post("/login", ctrl.Login)
+	public.Post("/google", ctrl.GoogleLogin)
 	public.Get("/verify-email", ctrl.VerifyEmail)
 	public.Post("/verify-email", ctrl.VerifyEmail)
 	public.Post("/reset-password/request", ctrl.RequestResetPassword)
 	public.Post("/reset-password", ctrl.ResetPassword)
 
-	// private := app.Group("/api/auth", mw.JWT)
-	private := app.Group("/api/auth", mw.JWT, middleware.VerifyEmailMiddleware(mw.DB))
+	// private := app.Group("/api/auth", mw.JWT, middleware.VerifyEmailMiddleware(mw.DB))
+	private := app.Group("/api/auth", mw.JWT)
 	private.Get("/me", ctrl.Profile)
 	private.Post("/update-password", ctrl.UpdatePassword)
+	private.Post("/link/google", ctrl.LinkGoogleAccount)
+	private.Post("/unlink/google", ctrl.UnlinkGoogleAccount)
 }
 
 func (c *AuthController) Register(ctx *fiber.Ctx) error {
@@ -196,4 +199,93 @@ func (c *AuthController) UpdatePassword(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.Status(http.StatusOK).JSON(helpers.SuccessResponseWithData(true, "password berhasil diperbarui", nil))
+}
+
+func (c *AuthController) GoogleLogin(ctx *fiber.Ctx) error {
+	req := new(dto.GoogleAuthRequest)
+	if err := helpers.BindAndValidate(ctx, req); err != nil {
+		return ctx.Status(http.StatusBadRequest).JSON(helpers.BasicResponse(false, err.Error()))
+	}
+
+	// Verifikasi token Google
+	googleUser, err := helpers.VerifyGoogleToken(req.Token)
+	if err != nil {
+		return ctx.Status(http.StatusUnauthorized).JSON(helpers.BasicResponse(false, "Token Google tidak valid"))
+	}
+
+	
+		googleUserDTO := &dto.GoogleUserDTO{
+		ID:      googleUser.ID,
+		Email:   googleUser.Email,
+		Name:    googleUser.Name,
+		Picture: googleUser.Picture,
+	}
+
+	user, token, err := c.authService.LoginWithGoogle(ctx.Context(), googleUserDTO)
+	if err != nil {
+		return ctx.Status(http.StatusInternalServerError).JSON(helpers.BasicResponse(false, err.Error()))
+	}
+
+	resp := dto.AuthResponseDTO{
+		ID:       user.ID,
+		Username: user.Username,
+		Email:    user.Email,
+		Token:    token,
+	}
+
+	return ctx.Status(http.StatusOK).JSON(helpers.SuccessResponseWithData(true, "login dengan Google berhasil", resp))
+}
+func (c *AuthController) LinkGoogleAccount(ctx *fiber.Ctx) error {
+	claims := helpers.GetUserClaims(ctx)
+	if claims == nil {
+		return ctx.Status(http.StatusUnauthorized).JSON(helpers.BasicResponse(false, "token tidak valid"))
+	}
+
+	userID, err := strconv.ParseInt(claims.UserID, 10, 64)
+	if err != nil {
+		return ctx.Status(http.StatusBadRequest).JSON(helpers.BasicResponse(false, "user ID tidak valid"))
+	}
+
+	req := new(dto.GoogleAuthRequest)
+	if err := helpers.BindAndValidate(ctx, req); err != nil {
+		return ctx.Status(http.StatusBadRequest).JSON(helpers.BasicResponse(false, err.Error()))
+	}
+
+	// Verifikasi token Google
+	googleUser, err := helpers.VerifyGoogleToken(req.Token)
+	if err != nil {
+		return ctx.Status(http.StatusUnauthorized).JSON(helpers.BasicResponse(false, "Token Google tidak valid"))
+	}
+
+	// Konversi ke GoogleUserDTO
+	googleUserDTO := &dto.GoogleUserDTO{
+		ID:      googleUser.ID,
+		Email:   googleUser.Email,
+		Name:    googleUser.Name,
+		Picture: googleUser.Picture,
+	}
+
+	if err := c.authService.LinkGoogleAccount(ctx.Context(), userID, googleUserDTO); err != nil {
+		return ctx.Status(http.StatusBadRequest).JSON(helpers.BasicResponse(false, err.Error()))
+	}
+
+	return ctx.Status(http.StatusOK).JSON(helpers.SuccessResponseWithData(true, "akun Google berhasil dihubungkan", nil))
+}
+
+func (c *AuthController) UnlinkGoogleAccount(ctx *fiber.Ctx) error {
+	claims := helpers.GetUserClaims(ctx)
+	if claims == nil {
+		return ctx.Status(http.StatusUnauthorized).JSON(helpers.BasicResponse(false, "token tidak valid"))
+	}
+
+	userID, err := strconv.ParseInt(claims.UserID, 10, 64)
+	if err != nil {
+		return ctx.Status(http.StatusBadRequest).JSON(helpers.BasicResponse(false, "user ID tidak valid"))
+	}
+
+	if err := c.authService.UnlinkGoogleAccount(ctx.Context(), userID); err != nil {
+		return ctx.Status(http.StatusBadRequest).JSON(helpers.BasicResponse(false, err.Error()))
+	}
+
+	return ctx.Status(http.StatusOK).JSON(helpers.SuccessResponseWithData(true, "akun Google berhasil diputus", nil))
 }

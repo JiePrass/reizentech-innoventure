@@ -49,6 +49,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	db := initDB()
 
+	
+
 	// Create Fiber app
 	app := fiber.New(fiber.Config{
 		AppName: "Fiber Auth App",

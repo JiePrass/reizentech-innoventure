@@ -19,17 +19,24 @@ func NewUserCustomEndpointRepo(db *sql.DB) UserCustomEndpointRepoInterface {
 	return &userCustomEndpointRepo{db: db}
 }
 
-// Struct untuk data custom user
 type UserCustomData struct {
-	User              UserDetail
-	Vehicles          []VehicleWithCarbon
-	Electronics       []ElectronicWithCarbon
-	Missions          []MissionProgress
-	Badges            []UserBadge
-	PointTransactions []PointTransaction
-	ActivityLogs      []ActivityLog
-	Orders            []Order
-	UserPoints        UserPoints
+	User                    UserDetail
+	Vehicles                []VehicleWithCarbon
+	Electronics             []ElectronicWithCarbon
+	Missions                []MissionProgress
+	Badges                  []UserBadge
+	PointTransactions       []PointTransaction
+	ActivityLogs            []ActivityLog
+	Orders                  []Order
+	UserPoints              UserPoints
+	MonthlyVehicleCarbon    []MonthlyCarbon // Tambahan baru
+	MonthlyElectronicCarbon []MonthlyCarbon // Tambahan baru
+}
+
+// Tambahkan struct MonthlyCarbon
+type MonthlyCarbon struct {
+	Month       time.Time
+	TotalCarbon float64
 }
 
 type UserDetail struct {
@@ -41,7 +48,7 @@ type UserDetail struct {
 	AvatarURL   string     `json:"avatar_url"`
 	Birthdate   *time.Time `json:"birthdate"`
 	Gender      string     `json:"gender"`
-	TotalPoints int      `json:"total_points"`
+	TotalPoints int        `json:"total_points"`
 	CreatedAt   time.Time  `json:"created_at"`
 }
 
@@ -134,7 +141,7 @@ type UserSimple struct {
 }
 
 type UserPoints struct {
-    TotalPoints int `json:"total_points"`
+	TotalPoints int `json:"total_points"`
 }
 
 func (r *userCustomEndpointRepo) GetUserCustomData(ctx context.Context, userID int64) (*UserCustomData, error) {
@@ -179,7 +186,7 @@ func (r *userCustomEndpointRepo) GetUserCustomData(ctx context.Context, userID i
 	err = r.db.QueryRowContext(ctx, pointsQuery, userID).Scan(&data.UserPoints.TotalPoints)
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
-	}	
+	}
 
 	// Query untuk vehicles
 	vehicleQuery := `
@@ -322,6 +329,66 @@ WHERE um.completed_at IS NOT NULL
 	}
 	rows.Close()
 
+	carbonVehicleMonthlyQuery := `
+		SELECT 
+			DATE_TRUNC('month', cvl.logged_at) as month,
+			COALESCE(SUM(cvl.carbon_emission_g), 0) as total_carbon
+		FROM carbon_vehicle_logs cvl
+		JOIN carbon_vehicles cv ON cvl.vehicle_id = cv.id
+		WHERE cv.user_id = $1 
+			AND cvl.logged_at >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '5 months'
+		GROUP BY DATE_TRUNC('month', cvl.logged_at)
+		ORDER BY month DESC
+		LIMIT 6
+	`
+	rows, err = r.db.QueryContext(ctx, carbonVehicleMonthlyQuery, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	data.MonthlyVehicleCarbon = make([]MonthlyCarbon, 0)
+	for rows.Next() {
+		var monthlyCarbon MonthlyCarbon
+		if err := rows.Scan(&monthlyCarbon.Month, &monthlyCarbon.TotalCarbon); err != nil {
+			return nil, err
+		}
+		data.MonthlyVehicleCarbon = append(data.MonthlyVehicleCarbon, monthlyCarbon)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// Query untuk total karbon per bulan (6 bulan terakhir) - ELECTRONIC
+	carbonElectronicMonthlyQuery := `
+		SELECT 
+			DATE_TRUNC('month', cel.logged_at) as month,
+			COALESCE(SUM(cel.carbon_emission_g), 0) as total_carbon
+		FROM carbon_electronics_logs cel
+		JOIN carbon_electronics ce ON cel.device_id = ce.id
+		WHERE ce.user_id = $1 
+			AND cel.logged_at >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '5 months'
+		GROUP BY DATE_TRUNC('month', cel.logged_at)
+		ORDER BY month DESC
+		LIMIT 6
+	`
+	rows, err = r.db.QueryContext(ctx, carbonElectronicMonthlyQuery, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	data.MonthlyElectronicCarbon = make([]MonthlyCarbon, 0)
+	for rows.Next() {
+		var monthlyCarbon MonthlyCarbon
+		if err := rows.Scan(&monthlyCarbon.Month, &monthlyCarbon.TotalCarbon); err != nil {
+			return nil, err
+		}
+		data.MonthlyElectronicCarbon = append(data.MonthlyElectronicCarbon, monthlyCarbon)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return data, nil
 }
 
