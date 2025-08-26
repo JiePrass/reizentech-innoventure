@@ -28,6 +28,7 @@ type Vehicle = {
 export default function VehicleSlider() {
   const { data: dataMe } = useAuthMe()
   const { data: vehicle } = GetVehicleTracker()
+  console.log(dataMe)
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
 
@@ -41,7 +42,7 @@ export default function VehicleSlider() {
           image: "/icons/motor.svg",
           type: d.type,
           percentage: "0%",
-          total: "0 kg CO₂e",
+          total: "3 kg CO₂e",
           active: false,
           watchId: null,
         }))
@@ -171,7 +172,7 @@ export default function VehicleSlider() {
     if (!newVehicle.name) return
     try {
       const res = await PostVehicleTracker({
-        user_id: dataMe?.data?.ID ? parseInt(dataMe.data.ID) : null,
+        user_id: dataMe?.data?.id ? parseInt(dataMe.data.id) : null,
         ...newVehicle,
       })
 

@@ -171,7 +171,7 @@ export default function VehicleSliderPublic() {
     if (!newVehicle.name) return
     try {
       const res = await PostVehicleTracker({
-        user_id: dataMe?.data?.ID ? parseInt(dataMe.data.ID) : null,
+        user_id: dataMe?.data?.id ? parseInt(dataMe.data.id) : null,
         ...newVehicle,
       })
 
@@ -201,7 +201,7 @@ export default function VehicleSliderPublic() {
 
   return (
     <section className="space-y-6">
-      <h2 className="text-xl font-semibold">Kendaraan Pribadi</h2>
+      <h2 className="text-xl font-semibold">Kendaraan Umum</h2>
       <div className="w-full overflow-hidden">
         <ScrollArea className="max-w-[166vh] whitespace-nowrap">
           <div className="flex gap-4 pb-4">
