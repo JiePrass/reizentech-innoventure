@@ -5,6 +5,7 @@ import { Card, CardContent, CardTitle } from "../ui/card"
 import { ChartArea } from "lucide-react"
 import { Button } from "../ui/button"
 import { ChevronRight } from "lucide-react"
+import { IconAward, IconCoins, IconListCheck, IconSparkles } from "@tabler/icons-react"
 
 export default function FeatureSection() {
     return (
@@ -32,53 +33,53 @@ export default function FeatureSection() {
                                     <ChartArea className="w-8 h-8" />
                                 </div>
                                 <CardTitle className="text-xl">
-                                    Lorem Ipsum Dolor
+                                    Carbon Tracker
                                 </CardTitle>
-                                <p className="text-gray-500 mt-1">Lorem ipsum dolor sit amet consectetur. Etiam.</p>
+                                <p className="text-gray-500 mt-1">Ikuti jejak karbon Anda dengan pelacakan emisi yang mudah dan akurat.</p>
                             </CardContent>
                         </Card>
                         <Card className="w-[300px]">
                             <CardContent>
                                 <div className="text-primary p-1 rounded-sm shadow w-fit border-gray-100 mb-4">
-                                    <ChartArea className="w-8 h-8" />
+                                    <IconSparkles className="w-8 h-8" />
                                 </div>
                                 <CardTitle className="text-xl">
-                                    Lorem Ipsum Dolor
+                                    Chatbot AI
                                 </CardTitle>
-                                <p className="text-gray-500 mt-1">Lorem ipsum dolor sit amet consectetur. Etiam.</p>
+                                <p className="text-gray-500 mt-1">Dapatkan bantuan langsung melalui chatbot yang siap membantu.</p>
                             </CardContent>
                         </Card>
                         <Card className="w-[300px]">
                             <CardContent>
                                 <div className="text-primary p-1 rounded-sm shadow w-fit border-gray-100 mb-4">
-                                    <ChartArea className="w-8 h-8" />
+                                    <IconListCheck className="w-8 h-8" />
                                 </div>
                                 <CardTitle className="text-xl">
-                                    Lorem Ipsum Dolor
+                                    Misi Harian
                                 </CardTitle>
-                                <p className="text-gray-500 mt-1">Lorem ipsum dolor sit amet consectetur. Etiam.</p>
+                                <p className="text-gray-500 mt-1">Selesaikan misi harian untuk mengurangi jejak karbon dan dapatkan hadiah.</p>
                             </CardContent>
                         </Card>
                         <Card className="w-[300px]">
                             <CardContent>
                                 <div className="text-primary p-1 rounded-sm shadow w-fit border-gray-100 mb-4">
-                                    <ChartArea className="w-8 h-8" />
+                                    <IconAward className="w-8 h-8" />
                                 </div>
                                 <CardTitle className="text-xl">
-                                    Lorem Ipsum Dolor
+                                    Lencana dan Peringkat
                                 </CardTitle>
-                                <p className="text-gray-500 mt-1">Lorem ipsum dolor sit amet consectetur. Etiam.</p>
+                                <p className="text-gray-500 mt-1">Dapatkan penghargaan atas pencapaian Anda dan lihat posisi Anda.</p>
                             </CardContent>
                         </Card>
                         <Card className="w-[300px]">
                             <CardContent>
                                 <div className="text-primary p-1 rounded-sm shadow w-fit border-gray-100 mb-4">
-                                    <ChartArea className="w-8 h-8" />
+                                    <IconCoins className="w-8 h-8" />
                                 </div>
                                 <CardTitle className="text-xl">
-                                    Lorem Ipsum Dolor
+                                    Penukaran Koin
                                 </CardTitle>
-                                <p className="text-gray-500 mt-1">Lorem ipsum dolor sit amet consectetur. Etiam.</p>
+                                <p className="text-gray-500 mt-1">Tukarkan poin Anda dengan voucher diskon produk ramah lingkungan.</p>
                             </CardContent>
                         </Card>
                     </div>

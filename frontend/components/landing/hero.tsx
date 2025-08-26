@@ -40,8 +40,10 @@ export default function HeroSection() {
                                 Masuk Dashboard <ChevronRight />
                             </Link>
                         </Button>
-                        <Button variant="link" className="text-white underline-offset-4">
-                            Berlangganan
+                        <Button variant="link" className="text-white underline-offset-4" asChild>
+                            <Link href="/register">
+                            Daftar
+                            </Link>
                         </Button>
                     </div>
                 </div>
