@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { IconPencil, IconTrendingUp } from "@tabler/icons-react"
 import Image from "next/image"
+import { fetchProfile } from "@/helpers/fetchProfile"
 
 // Type definitions for the data structure
 interface Vehicle {
@@ -55,6 +56,7 @@ interface ProfileData {
         email: string
         full_name: string
         avatar_url: string
+        total_points: number
     }
     vehicles: Vehicle[]
     electronics: Electronic[]
@@ -68,39 +70,23 @@ export default function Profile() {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        const fetchProfile = async () => {
-            try {
-                const token = localStorage.getItem("authtoken")
-                if (!token) {
-                    console.error("Token tidak ditemukan")
-                    return
-                }
-
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/custom/my-data`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                })
-
-                const data = await res.json()
-                if (data.status) {
-                    setProfile(data.data)
-                } else {
-                    console.error("Gagal ambil profil:", data.message)
-                }
-            } catch (err) {
-                console.error("Error fetch profil:", err)
-            } finally {
-                setLoading(false)
+        const fetchData = async () => {
+            const token = localStorage.getItem("authtoken")
+            if (!token) {
+                console.error("Token tidak ditemukan")
+                return
             }
+
+            const profileData = await fetchProfile(token)
+            setProfile(profileData)
+            setLoading(false)
         }
 
-        fetchProfile()
+        fetchData()
     }, [])
 
     if (loading) return <p className="p-6">Loading...</p>
 
-    // Ensure vehicles and electronics arrays are defined as empty arrays if undefined
     const vehicles = profile?.vehicles || []
     const electronics = profile?.electronics || []
 
@@ -110,8 +96,7 @@ export default function Profile() {
             electronics.reduce((acc: number, device: Electronic) => acc + (device.total_carbon_emission_g || 0), 0)) / 1000
     ).toFixed(2)
 
-    // Calculate completed missions
-    const completedMissions = profile?.missions.filter((mission: Mission) => mission.progress >= mission.target_value).length
+
 
     return (
         <div className="p-6 space-y-6">
@@ -162,7 +147,7 @@ export default function Profile() {
             </Dialog>
 
             {/* Statistik + badge section */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <Card>
                     <CardHeader className="flex gap-4 mb-2">
                         <CardTitle className="font-normal text-sm">Total Karbon Yang Dihasilkan</CardTitle>
@@ -188,7 +173,23 @@ export default function Profile() {
                     </CardHeader>
                     <CardContent>
                         <CardDescription className="text-[28px] font-semibold text-black mb-2">
-                            {completedMissions} Misi
+                            {profile?.missions.length} Misi
+                        </CardDescription>
+                    </CardContent>
+                    <CardFooter>
+                        <p className="text-sm text-muted-foreground">Kenaikan Bulan Ini</p>
+                    </CardFooter>
+                </Card>
+                <Card>
+                    <CardHeader className="flex gap-4 mb-2">
+                        <CardTitle className="font-normal text-sm">Total Misi Yang Diselesaikan</CardTitle>
+                        <Badge variant="outline" className="mt-2">
+                            <IconTrendingUp className="w-4 h-4 mr-1" /> +11.0%
+                        </Badge>
+                    </CardHeader>
+                    <CardContent>
+                        <CardDescription className="text-[28px] font-semibold text-black mb-2">
+                            {profile?.user.total_points} Point
                         </CardDescription>
                     </CardContent>
                     <CardFooter>

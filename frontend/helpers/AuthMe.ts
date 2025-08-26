@@ -1,8 +1,8 @@
 import * as React from "react"
 interface Response1 {
-    ID?: string;
-    Username?: string;
-    Role?: string;
+    id?: string;
+    username?: string;
+    role?: string;
 }
 interface Response {
     status: string;

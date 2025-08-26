@@ -52,7 +52,7 @@ export default function ReviewSection() {
     }, [swiperInst])
 
     return (
-        <section className="relative flex flex-col items-center justify-center py-20 lg:px-0 px-4 overflow-hidden">
+        <section className="relative flex flex-col items-center justify-center py-20 lg:px-0 px-4 overflow-hidden" id="testimoni">
             {/* Header */}
             <div className="flex flex-col gap-4 items-center mb-12 text-center">    
                 <Badge variant="outline" className="text-gray-700 border-gray-300 px-4 py-2 font-light text-base">

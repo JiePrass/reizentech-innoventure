@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Button } from "../ui/button";
 import { motion, useAnimation, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
+import { IconBubble } from "@tabler/icons-react"
 import { Menu, X, Home, Info, Wrench, HelpCircle } from "lucide-react";
 
 /* ========= NAVIGATION ITEMS ========= */
@@ -13,6 +14,7 @@ const navItems = [
     { id: "home", label: "Beranda", icon: Home },
     { id: "about", label: "Tentang Kami", icon: Info },
     { id: "feature", label: "Layanan Kami", icon: Wrench },
+    { id: "testimoni", label: "Testimoni", icon: IconBubble },
     { id: "faq", label: "FAQ", icon: HelpCircle },
 ] as const;
 

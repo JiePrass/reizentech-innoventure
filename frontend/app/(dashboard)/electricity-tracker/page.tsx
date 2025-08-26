@@ -102,7 +102,7 @@ export default function ElectrictyTracker() {
                 device_name: newDevice.name,
                 power_watts: parseFloat(newDevice.power_watts),
                 device_type: newDevice.type,
-                user_id: dataMe?.data?.ID ? parseInt(dataMe.data.ID) : null
+                user_id: dataMe?.data?.id ? parseInt(dataMe.data.id) : null
             })
 
             console.log(result)
@@ -155,9 +155,20 @@ export default function ElectrictyTracker() {
             return log.device_id.toString().includes(search.toLowerCase());
         });
 
-    console.log("Data Devices", devices)
-    console.log("DATA LOG", carbonElectronicLogs)
-    console.log("Filtered Carbon Logs", filteredCarbonElectronicLogs)
+    // Format Tanggal
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        const formattedDate = `${day}/${month}/${year}`;
+
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const formattedTime = `${hours}:${minutes}`;
+
+        return { formattedDate, formattedTime };
+    }
 
     if (loadingDevices || loadingCarbonLogs) {
         return <div>Loading...</div>
@@ -341,24 +352,27 @@ export default function ElectrictyTracker() {
                             <TableHead>Perangkat</TableHead>
                             <TableHead>Durasi (Jam)</TableHead>
                             <TableHead>Emisi</TableHead>
+                            <TableHead>Jam</TableHead>
                             <TableHead>Tanggal</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {filteredCarbonElectronicLogs.length > 0 ? filteredCarbonElectronicLogs.map((log) => {
                             const device = devices.find((d) => d.id === log.device_id);  // Temukan nama perangkat berdasarkan device_id
+                            const { formattedDate, formattedTime } = formatDate(log.created_at); // Pecah tanggal dan waktu
                             return (
                                 <TableRow key={log.id}>
                                     <TableCell>{log.device_id}</TableCell>
                                     <TableCell>{device ? device.name : "Tidak ditemukan"}</TableCell>
                                     <TableCell>{log.duration_hours}</TableCell>
                                     <TableCell>{log.carbon_emission}</TableCell>
-                                    <TableCell>{log.created_at}</TableCell>
+                                    <TableCell>{formattedTime}</TableCell>
+                                    <TableCell>{formattedDate}</TableCell>
                                 </TableRow>
                             );
                         }) : (
                             <TableRow>
-                                <TableCell colSpan={4} className="text-center">Tidak ada data</TableCell>
+                                <TableCell colSpan={6} className="text-center">Tidak ada data</TableCell>
                             </TableRow>
                         )}
                     </TableBody>
