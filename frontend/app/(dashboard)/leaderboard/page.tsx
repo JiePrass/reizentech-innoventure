@@ -1,10 +1,11 @@
 "use client"
 
-import Image from "next/image"
 import { useEffect, useState } from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import Image from "next/image"
 import { IconCheck } from "@tabler/icons-react"
+import { GetLeaderboard } from "@/helpers/GetLeaderboard" // Import the helper function
 
 type LeaderboardUser = {
     rank: number
@@ -25,16 +26,21 @@ export default function LeaderboardPage() {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        const fetchLeaderboard = async () => {
+        const fetchLeaderboardData = async () => {
             try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/custom/leaderboard`, {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("authtoken")}`,
-                    },
-                })
-                const data = await res.json()
-                if (data.status) {
-                    setLeaderboard(data.data.leaderboard)
+                const token = localStorage.getItem("authtoken")
+                if (!token) {
+                    console.error("Token tidak ditemukan. Silakan login ulang.")
+                    return
+                }
+
+                // Fetch leaderboard data using the helper function
+                const data = await GetLeaderboard(token)
+                // Ensure that the structure matches what we expect (directly accessing the leaderboard)
+                if (data && Array.isArray(data)) {
+                    setLeaderboard(data) // Update the state with the leaderboard array
+                } else {
+                    console.error("Leaderboard data not available or malformed:", data)
                 }
             } catch (err) {
                 console.error("Error fetching leaderboard:", err)
@@ -42,12 +48,15 @@ export default function LeaderboardPage() {
                 setLoading(false)
             }
         }
-        fetchLeaderboard()
+
+        fetchLeaderboardData()
     }, [])
 
     if (loading) return <p className="p-6">Loading...</p>
 
     const topThree = leaderboard.slice(0, 3)
+
+    console.log("DATA", leaderboard)
 
     return (
         <div className="p-6 space-y-6">

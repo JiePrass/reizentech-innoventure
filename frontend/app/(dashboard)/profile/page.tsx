@@ -11,24 +11,60 @@ import { Label } from "@/components/ui/label"
 import { IconPencil, IconTrendingUp } from "@tabler/icons-react"
 import Image from "next/image"
 
-const badges = [
-    {
-        id: 1,
-        title: "Penjelajah Baru",
-        description: "Daftar dan bergabung ke GreenHero untuk pertama kalinya.",
-        icon: "/icons/badge.svg",
-    },
-    {
-        id: 2,
-        title: "Jejak Awal",
-        description: "Mengisi data kendaraan atau elektronik untuk pertama kali.",
-        icon: "/icons/badge.svg",
-    },
-]
+// Type definitions for the data structure
+interface Vehicle {
+    id: number
+    vehicle_type: string
+    fuel_type: string
+    name: string
+    total_carbon_emission_g: number
+}
+
+interface Electronic {
+    id: number
+    device_name: string
+    device_type: string
+    power_watts: number
+    total_carbon_emission_g: number
+}
+
+interface BadgeType {
+    id: number
+    name: string
+    image_url: string
+    description: string
+    redeemed_at: string
+}
+
+interface Mission {
+    id: number
+    title: string
+    description: string
+    mission_type: string
+    points_reward: number
+    target_value: number
+    progress: number
+    completed_at: string
+    created_at: string
+}
+
+interface ProfileData {
+    user: {
+        id: number
+        username: string
+        email: string
+        full_name: string
+        avatar_url: string
+    }
+    vehicles: Vehicle[]
+    electronics: Electronic[]
+    missions: Mission[]
+    badges: BadgeType[]
+}
 
 export default function Profile() {
     const [open, setOpen] = useState(false)
-    const [profile, setProfile] = useState<any>(null)
+    const [profile, setProfile] = useState<ProfileData | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -62,20 +98,32 @@ export default function Profile() {
         fetchProfile()
     }, [])
 
-
     if (loading) return <p className="p-6">Loading...</p>
+
+    // Ensure vehicles and electronics arrays are defined as empty arrays if undefined
+    const vehicles = profile?.vehicles || []
+    const electronics = profile?.electronics || []
+
+    // Calculate total carbon emissions in kilograms
+    const totalCarbonEmission = (
+        (vehicles.reduce((acc: number, vehicle: Vehicle) => acc + (vehicle.total_carbon_emission_g || 0), 0) +
+            electronics.reduce((acc: number, device: Electronic) => acc + (device.total_carbon_emission_g || 0), 0)) / 1000
+    ).toFixed(2)
+
+    // Calculate completed missions
+    const completedMissions = profile?.missions.filter((mission: Mission) => mission.progress >= mission.target_value).length
 
     return (
         <div className="p-6 space-y-6">
             <Card className="flex flex-col md:flex-row items-center justify-between gap-6 p-6 rounded-2xl shadow-sm">
                 <div className="flex items-center gap-4">
                     <Avatar className="h-16 w-16">
-                        <AvatarImage src={profile?.user?.avatar_url || "/avatar.png"} alt="Avatar" />
+                        <AvatarImage src={profile?.user?.avatar_url || "/images/profile.png"} alt="Avatar" />
                         <AvatarFallback>{profile?.user?.full_name.slice(0, 2).toUpperCase() || "NA"}</AvatarFallback>
                     </Avatar>
                     <div>
-                        <h2 className="text-lg font-semibold">{profile?.user?.FullName || profile?.user.username}</h2>
-                        <p className="text-sm text-muted-foreground">{profile?.Email}</p>
+                        <h2 className="text-lg font-semibold">{profile?.user?.full_name || profile?.user?.username}</h2>
+                        <p className="text-sm text-muted-foreground">{profile?.user?.email}</p>
                         <div className="flex gap-2 mt-2">
                             <span className="px-3 py-1 text-xs rounded-full border">Peringkat 22</span>
                             <span className="px-3 py-1 text-xs rounded-full border">Streak 12 Hari</span>
@@ -97,11 +145,11 @@ export default function Profile() {
                     <div className="space-y-4">
                         <div>
                             <Label htmlFor="name">Nama</Label>
-                            <Input id="name" defaultValue={profile?.profile?.FullName || profile?.Username} />
+                            <Input id="name" defaultValue={profile?.user?.full_name || profile?.user?.username} />
                         </div>
                         <div>
                             <Label htmlFor="email">Email</Label>
-                            <Input id="email" defaultValue={profile?.Email} />
+                            <Input id="email" defaultValue={profile?.user?.email} />
                         </div>
                     </div>
                     <DialogFooter className="mt-4">
@@ -113,7 +161,7 @@ export default function Profile() {
                 </DialogContent>
             </Dialog>
 
-            {/* Statistik + badge section tetap sama */}
+            {/* Statistik + badge section */}
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <Card>
                     <CardHeader className="flex gap-4 mb-2">
@@ -124,7 +172,7 @@ export default function Profile() {
                     </CardHeader>
                     <CardContent>
                         <CardDescription className="text-[28px] font-semibold text-black mb-2">
-                            34,54 kg CO₂e
+                            {totalCarbonEmission} Kg CO₂e
                         </CardDescription>
                     </CardContent>
                     <CardFooter>
@@ -140,7 +188,7 @@ export default function Profile() {
                     </CardHeader>
                     <CardContent>
                         <CardDescription className="text-[28px] font-semibold text-black mb-2">
-                            0 Misi
+                            {completedMissions} Misi
                         </CardDescription>
                     </CardContent>
                     <CardFooter>
@@ -149,22 +197,27 @@ export default function Profile() {
                 </Card>
             </div>
 
+            {/* Display badges dynamically */}
             <div className="rounded-xl shadow border p-6">
-                <h1 className="text-2xl font-bold mb-6">Lencana yang Belum Dimiliki</h1>
+                <h1 className="text-2xl font-bold mb-6">Lencana yang Telah Dimiliki</h1>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-                    {badges.map((badge) => (
-                        <Card key={badge.id}>
-                            <CardHeader className="flex flex-col items-center text-center">
-                                <div className="w-16 h-16 relative mb-2">
-                                    <Image src={badge.icon} alt={badge.title} fill className="object-contain" />
-                                </div>
-                                <CardTitle className="text-lg">{badge.title}</CardTitle>
-                            </CardHeader>
-                            <CardContent className="text-sm text-center text-muted-foreground">
-                                {badge.description}
-                            </CardContent>
-                        </Card>
-                    ))}
+                    {profile?.badges && profile?.badges.length > 0 ? (
+                        profile?.badges.map((badge: BadgeType) => (
+                            <Card key={badge.id}>
+                                <CardHeader className="flex flex-col items-center text-center">
+                                    <div className="w-16 h-16 relative mb-2">
+                                        <Image src={badge.image_url} alt={badge.name} fill className="object-contain" />
+                                    </div>
+                                    <CardTitle className="text-lg">{badge.name}</CardTitle>
+                                </CardHeader>
+                                <CardContent className="text-sm text-center text-muted-foreground">
+                                    {badge.description}
+                                </CardContent>
+                            </Card>
+                        ))
+                    ) : (
+                        <p className="col-span-4">Selesaikan Misi untuk mendapatkan Badge!</p>
+                    )}
                 </div>
             </div>
         </div>
