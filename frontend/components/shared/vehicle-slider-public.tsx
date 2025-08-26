@@ -131,6 +131,9 @@ export default function VehicleSliderPublic() {
                   </p>
                   <p className="text-lg font-semibold">{v.total}</p>
                   <p className="text-xs text-gray-500">{v.percentage}</p>
+                  <Button variant={v.active ? "destructive" : "outline"} className="w-full">
+                    {v.active ? "Matikan Kendaraan" : "Aktifkan Kendaraan"}
+                  </Button>
                 </CardContent>
               </Card>
             ))}

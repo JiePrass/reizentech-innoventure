@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import VehicleSlider from "@/components/shared/vehicle-slider"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -30,33 +29,6 @@ const data = [
 
 export default function VehicleTracker() {
     
-    const [location, setLocation] = useState<{lat: number, lng: number} | null>(null)
-    const [error, setError] = useState<string | null>(null)
-    
-    const getLocation = () => {
-        if (!navigator.geolocation) {
-        setError("Geolocation tidak didukung oleh browser ini.")
-        return
-        }
-
-        navigator.geolocation.getCurrentPosition(
-        (position) => {
-            setLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-            })
-            setError(null)
-        },
-        (err) => {
-            setError("Gagal mendapatkan lokasi: " + err.message)
-        },
-        {
-            enableHighAccuracy: true, // lebih akurat (GPS, tapi lebih lama & boros baterai)
-            timeout: 10000, // max tunggu 10 detik
-            maximumAge: 0, // selalu ambil posisi terbaru
-        }
-        )
-    }
 
     const { data: vehicle } = GetVehicleTracker()
 
@@ -64,22 +36,7 @@ export default function VehicleTracker() {
 
     return (
         <div className="p-6 space-y-6 overflow-x-hidden">
-             <div className="p-4">
-                <button 
-                    onClick={getLocation} 
-                    className="px-4 py-2 bg-green-600 text-white rounded"
-                >
-                    Aktifkan GPS
-                </button>
-
-                {location && (
-                    <p className="mt-2">
-                    Latitude: {location.lat}, Longitude: {location.lng}
-                    </p>
-                )}
-
-                {error && <p className="mt-2 text-red-500">{error}</p>}
-            </div>
+             
             {/* Statistik Cards */}
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <Card className="gap-0">
