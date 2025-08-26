@@ -21,9 +21,15 @@ export function AppHeader() {
   const { data: dataUser, loading, error } = useAuthMe()
   const logout = LogoutAction()
 
-  if (loading) return console.log('loadingg..')
-  if (error) return console.log('error get me..', error)
-    
+  if (loading) {
+    console.log("loadingg..")
+    return <header className="p-4">Loading...</header>
+  }
+
+  if (error) {
+    console.log("error get me..", error)
+    return <header className="p-4 text-red-500">Gagal memuat data</header>
+  }
 
   return (
     <header className="flex py-4 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">

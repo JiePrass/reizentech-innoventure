@@ -9,7 +9,7 @@ import {
   CardFooter,
 } from "@/components/ui/card"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
-import { SectionCards } from "@/components/shared/section-cards"
+import { SectionSumCards } from "@/components/shared/section-summary-cards"
 import { useAuthMe } from "@/helpers/AuthMe"
 
 // Dummy data grafik
@@ -48,7 +48,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Statistik Cards */}
-      <SectionCards />
+      <SectionSumCards />
 
       {/* Grafik Tren */}
       <Card>
