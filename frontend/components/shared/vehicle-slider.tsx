@@ -34,15 +34,16 @@ export default function VehicleSlider() {
 
   useEffect(() => {
     if (vehicle?.data && vehicle?.data?.length > 0) {
+      console.log(vehicle.data)
       const initialDevices = vehicle?.data
-        ?.filter((item) => item.vehicle_type !== "public_transport")
+        ?.filter((item) => item.VehicleType !== "public_transport")
         .map((d) => ({
           id: d.id,
-          title: d.name,
+          title: d.Name,
           image: "/icons/motor.svg",
           type: d.type,
           percentage: "0%",
-          total: "3 kg CO₂e",
+          total: (d.LatestLog !== null ? d.LatestLog.CarbonEmission : 0) + " kg CO₂e",
           active: false,
           watchId: null,
         }))
@@ -222,7 +223,7 @@ export default function VehicleSlider() {
                   <p className="text-sm text-muted-foreground">
                     Total Karbon Terakhir <br /> {v.title}
                   </p>
-                  <p className="text-lg font-semibold">{v.total}</p>
+                  <p className="text-lg font-semibold">{parseFloat(v.total).toFixed(2)} kg CO₂e</p>
                   <p className="text-xs text-gray-500">{v.percentage}</p>
                   <Button
                     variant={v.active ? "destructive" : "outline"}

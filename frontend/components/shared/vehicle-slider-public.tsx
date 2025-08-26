@@ -34,10 +34,10 @@ export default function VehicleSliderPublic() {
   useEffect(() => {
     if (vehicle?.data && vehicle?.data?.length > 0) {
       const initialDevices = vehicle?.data
-        ?.filter((item) => item.vehicle_type === "public_transport")
+        ?.filter((item) => item.VehicleType === "public_transport")
         .map((d) => ({
           id: d.id,
-          title: d.name,
+          title: d.Name,
           image: "/icons/motor.svg",
           type: d.type,
           percentage: "0%",
