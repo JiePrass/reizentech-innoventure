@@ -150,11 +150,8 @@ export default function VehicleSlider() {
             end_lon: longitude,
           })
 
-          if (res) {            
+          if (distance && res) {
             console.log(res)
-          }
-
-          if (distance) {
             alert(
               `Jarak tempuh kendaraan "${v.title}" adalah ${(distance / 1000).toFixed(
                 2
